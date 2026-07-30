@@ -18,7 +18,7 @@ reset="\e[0m"
 gray="\e[38;5;245m"
 
 # Repository base URL
-REPO="https://raw.githubusercontent.com/PexDev/scripttun/main"
+REPO="https://raw.githubusercontent.com/PeyxDev/scripttun/main"
 
 # System information
 timezone="Asia/Jakarta"
@@ -42,6 +42,7 @@ udp_url="${REPO}/project/udp/udp-custom.sh"
 nginx_conf_url="${REPO}/project/nginx/nginx.conf"
 badvpn_url="${REPO}/project/BadVPN-UDPGW/badvpn"
 openvpn_url="${REPO}/project/openvpn/openvpn.zip"
+api_url="${REPO}/project/api/api-px.sh"
 
 # =============================================
 # FUNCTIONS
@@ -157,6 +158,34 @@ install_package() {
 }
 
 # =============================================
+# LICENSE VERIFICATION
+# =============================================
+
+verify_license() {
+    log_info "Memverifikasi lisensi VPS..."
+
+    local izin_data
+    izin_data=$(curl -s "${REPO}/izin")
+
+    if [ -z "$izin_data" ] || ! echo "$izin_data" | grep -q "$ip"; then
+        clear
+        echo -e "${red}────────────────────────────────────────────${neutral}"
+        echo -e "${red}           PERMISSION DENIED !${neutral}"
+        echo -e "${red}────────────────────────────────────────────${neutral}"
+        echo -e "${yellow}  IP VPS Anda: ${bold_white}$ip${neutral}"
+        echo -e "${yellow}  IP ini tidak terdaftar / tidak memiliki izin instalasi.${neutral}"
+        echo -e "${red}────────────────────────────────────────────${neutral}"
+        echo -e "${yellow}  Silakan hubungi admin untuk mendapatkan akses:${neutral}"
+        echo -e "     ${green}WhatsApp${neutral} wa.me/6283151636921"
+        echo -e "     ${blue}Telegram${neutral} t.me/frel01"
+        echo -e "${red}────────────────────────────────────────────${neutral}"
+        exit 1
+    fi
+
+    log_success "Lisensi terverifikasi untuk IP $ip"
+}
+
+# =============================================
 # INITIAL SETUP
 # =============================================
 
@@ -166,26 +195,25 @@ initial_setup() {
     # Create required directories
     log_info "Creating required directories..."
     local directories=(
+        /run/xray
         /etc/xray
-        /etc/vmess
-        /etc/vless
-        /etc/trojan
-        /etc/shadowsocks
-        /usr/bin/xray
+        /etc/peyx
+        /etc/peyx/limit/vmess/ip
+        /etc/peyx/limit/vless/ip
+        /etc/peyx/limit/trojan/ip
         /var/log/xray
         /var/www/html
+        /home/vps/public_html
         /etc/haproxy
-        /etc/xray/vmess
-        /etc/xray/vless
-        /etc/xray/trojan
-        /etc/xray/shadowsocks
-        /etc/xray/ssh
     )
 
     for dir in "${directories[@]}"; do
         [ ! -d "$dir" ] && mkdir -p "$dir"
         chmod 777 "$dir"
     done
+
+    # www-data needs to own the xray domain socket dir, same as ins-xray.sh expects
+    chown www-data:www-data /run/xray >/dev/null 2>&1
 
     # Domain setup
     if [ -z "$1" ]; then
@@ -222,11 +250,8 @@ initial_setup() {
         /etc/xray/domain
         /var/log/xray/access.log
         /var/log/xray/error.log
-        /etc/xray/vmess/.vmess.db
-        /etc/xray/vless/.vless.db
-        /etc/xray/trojan/.trojan.db
-        /etc/xray/shadowsocks/.shadowsocks.db
-        /etc/xray/ssh/.ssh.db
+        /var/log/xray/access2.log
+        /var/log/xray/error2.log
         /etc/ssh/.ssh.db
     )
 
@@ -236,7 +261,7 @@ initial_setup() {
     done
 
     # Set execute permissions
-    chmod +x /var/log/xray /etc/xray /etc/haproxy /etc/xray/vmess /etc/xray/vless /etc/xray/trojan /etc/xray/shadowsocks /etc/xray/ssh
+    chmod +x /var/log/xray /etc/xray /etc/haproxy /etc/peyx /etc/peyx/limit/vmess/ip /etc/peyx/limit/vless/ip /etc/peyx/limit/trojan/ip
 
     # Save system information
     city=$(curl -s ipinfo.io/city)
@@ -474,10 +499,20 @@ download_menu_tools() {
     
     if wget -O menu.zip "$url" >/dev/null 2>&1; then
         7z e -pPX menu.zip >/dev/null 2>&1
-        chmod +x * >/dev/null 2>&1
-        mv * /usr/bin >/dev/null 2>&1
-        rm -rf /etc/menu >/dev/null 2>&1
         rm -f menu.zip >/dev/null 2>&1
+
+        # Convert all extracted files to Unix line endings
+        if check_command dos2unix; then
+            find . -type f -exec dos2unix {} \; >/dev/null 2>&1
+        else
+            find . -type f -exec sed -i 's/\r$//' {} \; >/dev/null 2>&1
+        fi
+
+        chmod +x * >/dev/null 2>&1
+        mkdir -p /usr/local/sbin
+        mv * /usr/local/sbin >/dev/null 2>&1
+        cd /
+        rm -rf /etc/menu >/dev/null 2>&1
         log_success "Menu tools downloaded and installed"
     else
         log_error "Failed to download menu tools"
@@ -569,49 +604,25 @@ network_configuration() {
 }
 
 # =============================================
-# XRAY INSTALLATION AND SSL
+# API INSTALLATION
 # =============================================
 
-xray_installation() {
-    log_info "Installing Xray and configuring SSL..."
-    
-    # Install Xray if not exists
-    if ! check_command xray; then
-        log_info "Installing Xray..."
-        bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u www-data --version 1.8.7
+api_installation() {
+    log_info "Installing API service..."
+
+    local api_script="/tmp/api-px.sh"
+
+    if download_and_chmod "$api_url" "$api_script" "API installer"; then
+        bash "$api_script"
+        if systemctl is-active --quiet api.service; then
+            log_success "API service installed and running (port 8585)"
+        else
+            log_warning "API service installed but not running, check: systemctl status api"
+        fi
+        rm -f "$api_script"
     else
-        log_info "Xray already installed"
+        log_error "Failed to download API installer"
     fi
-
-    # Stop services for SSL setup
-    systemctl stop haproxy >/dev/null 2>&1
-    systemctl stop nginx >/dev/null 2>&1
-
-    # Install acme.sh if not exists
-    if [ ! -f "/root/.acme.sh/acme.sh" ]; then
-        log_info "Installing acme.sh..."
-        mkdir -p /root/.acme.sh
-        curl https://acme-install.netlify.app/acme.sh -o /root/.acme.sh/acme.sh >/dev/null 2>&1
-        chmod +x /root/.acme.sh/acme.sh
-    fi
-
-    # Get SSL certificate
-    domain=$(cat /etc/xray/domain)
-    log_info "Requesting SSL certificate for $domain..."
-    
-    /root/.acme.sh/acme.sh --upgrade --auto-upgrade >/dev/null 2>&1
-    /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt >/dev/null 2>&1
-    /root/.acme.sh/acme.sh --issue -d $domain --standalone -k ec-256 >/dev/null 2>&1
-    /root/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc >/dev/null 2>&1
-    
-    # Combine certificate for haproxy
-    cat /etc/xray/xray.crt /etc/xray/xray.key | tee /etc/haproxy/yha.pem >/dev/null 2>&1
-    
-    # Set proper permissions
-    chown www-data:www-data /etc/xray/xray.key
-    chown www-data:www-data /etc/xray/xray.crt
-    
-    log_success "SSL certificate installed"
 }
 
 # =============================================
@@ -772,7 +783,7 @@ configure_cron_jobs() {
     cat >/etc/cron.d/xp_all <<EOF
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-2 0 * * * root /usr/bin/exp
+2 0 * * * root /usr/local/sbin/exp
 EOF
 
     cat >/etc/cron.d/daily_reboot <<EOF
@@ -784,7 +795,7 @@ EOF
     cat >/etc/cron.d/logclear <<EOF
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-0 */6 * * * root /usr/bin/logclear
+0 */6 * * * root /usr/local/sbin/logclear
 EOF
 
     service cron restart >/dev/null 2>&1
@@ -843,8 +854,8 @@ create_systemd_services() {
     # Other services
     create_generic_service "ws" "Python Proxy PeyxDev" " /usr/bin/ws"
     create_generic_service "udp" "ePro Udp-Custom VPN Server" "/usr/bin/udp server -exclude 2200,7300,7200,7100,323,10008,10004 /usr/bin/config.json"
-    create_generic_service "limitip" "Limit IP Usage Xray Service" "/bin/bash -c '/usr/bin/limitipssh 15 & /usr/bin/limitip 15 & wait'"
-    create_generic_service "limitquota" "Limit Quota Usage Xray Service" "/usr/bin/quota"
+    create_generic_service "limitip" "Limit IP Usage Xray Service" "/bin/bash -c '/usr/local/sbin/limitipssh 15 & /usr/local/sbin/limitip 15 & wait'"
+    create_generic_service "limitquota" "Limit Quota Usage Xray Service" "/usr/local/sbin/quota"
     create_generic_service "badvpn" "BadVPN UDP Service" "/usr/bin/badvpn --listen-addr 127.0.0.1:7100 --listen-addr 127.0.0.1:7200 --listen-addr 127.0.0.1:7300 --max-clients 500"
 
     # Configure xray single config
@@ -984,6 +995,7 @@ start_services() {
         "nginx.service"
         "ssh.service"
         "dropbear.service"
+        "api.service"
     )
 
     for service in "${services[@]}"; do
@@ -1007,6 +1019,9 @@ main() {
     echo -e "${green}       SCRIPT INSTALLATION VIP          ${neutral}"
     echo -e "${blue}=========================================${neutral}"
     
+    # Verify license before doing anything else
+    verify_license
+
     # Execute all steps in sequence
     initial_setup "$1"
     system_preparation
@@ -1015,7 +1030,7 @@ main() {
     download_menu_tools
     download_configurations
     network_configuration
-    xray_installation
+    api_installation
     openvpn_configuration
     service_configuration
     final_setup
@@ -1033,4 +1048,4 @@ main() {
 }
 
 # Run main function with all arguments
-main "$@"
+main "$@"

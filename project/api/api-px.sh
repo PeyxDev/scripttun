@@ -75,7 +75,7 @@ echo -e "${green}✅ Directories created${neutral}"
 
 # Download server.js from repo
 echo -e "${yellow}[4/7] Downloading server.js from repo...${neutral}"
-curl -sL "https://raw.githubusercontent.com/PeyxDev/esce/main/api/server.js" -o /etc/peyx-api/server.js
+curl -sL "https://raw.githubusercontent.com/PeyxDev/scripttun/main/project/api/server.js" -o /etc/peyx-api/server.js
 
 if [ -f /etc/peyx-api/server.js ]; then
     echo -e "${green}✅ server.js downloaded successfully${neutral}"

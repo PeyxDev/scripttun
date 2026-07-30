@@ -12,7 +12,7 @@ CYAN='\033[0;36m'
 LIGHT='\033[0;37m'
 # ==========================================
 
-REPO="https://raw.githubusercontent.com/PeyxDev/esce/main/"
+REPO="https://raw.githubusercontent.com/PeyxDev/scripttun/main/"
 echo -e ""
 date
 echo ""
@@ -309,8 +309,8 @@ WantedBy=multi-user.target
 EOF
 
 #nginx config
-wget -O /etc/nginx/conf.d/xray.conf "${REPO}install/xray.conf"
-wget -O /etc/haproxy/haproxy.cfg "${REPO}install/haproxy.cfg"
+wget -O /etc/nginx/conf.d/xray.conf "${REPO}project/Xray/xray.conf"
+wget -O /etc/haproxy/haproxy.cfg "${REPO}project/Haproxy/haproxy.cfg"
 sed -i "s/xxx/${domain}/" /etc/nginx/conf.d/xray.conf
 sed -i "s/xxx/${domain}/" /etc/haproxy/haproxy.cfg
 cat /etc/xray/xray.key /etc/xray/xray.crt | tee /etc/haproxy/hap.pem
