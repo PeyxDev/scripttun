@@ -48,7 +48,7 @@ fi
 clear
 print_rainbow "════════════════════════════════════════════════════════════"
 print_rainbow "                   API INSTALL SCRIPT                       "
-print_rainbow "                    Created by PeyxDev                       "
+print_rainbow "                   Created by PeyxDev                       "
 print_rainbow "════════════════════════════════════════════════════════════"
 echo ""
 
