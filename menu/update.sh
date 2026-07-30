@@ -185,8 +185,8 @@ rm -f /root/*.sh* 2>/dev/null
 if [[ -n "$KEY" ]] && [[ -n "$CHATID" ]]; then
     domain=$(cat /etc/xray/domain 2>/dev/null)
     MYIP=$(curl -sS ipv4.icanhazip.com 2>/dev/null)
-    username=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx 2>/dev/null | grep $MYIP | awk '{print $2}')
-    valid=$(curl -sS https://raw.githubusercontent.com/PeyxDev/esce/main/ipx 2>/dev/null | grep $MYIP | awk '{print $3}')
+    username=$(curl -sS https://raw.githubusercontent.com/PeyxDev/scripttun/main/izin 2>/dev/null | grep $MYIP | awk '{print $2}')
+    valid=$(curl -sS https://raw.githubusercontent.com/PeyxDev/scripttun/main/izin 2>/dev/null | grep $MYIP | awk '{print $3}')
     
     today=$(date +"%Y-%m-%d")
     d1=$(date -d "$valid" +%s 2>/dev/null)
