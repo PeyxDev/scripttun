@@ -199,7 +199,7 @@ clear
 # ==================== FUNCTION INSTALLASI ====================
 function Installasi(){
 res2() {
-wget -q ${REPO}project/openvpn/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
+wget -q ${REPO}project/openvpn/ssh-ovpn.sh && chmod +x ssh-ovpn.sh && ./ssh-ovpn.sh
 clear 
 }
 res3() {
