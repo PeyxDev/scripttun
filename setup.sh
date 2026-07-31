@@ -220,8 +220,17 @@ fi
 
 # Konfigurasi SSH
 wget -q -O /etc/issue.net "${REPO}project/examples/banner"
-wget -q -O /etc/ssh/sshd_config "${REPO}project/examples/sshd"
-systemctl restart ssh
+sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+sed -i 's/^#Banner.*/Banner \/etc\/issue.net/' /etc/ssh/sshd_config
+sed -i 's/^Banner.*/Banner \/etc\/issue.net/' /etc/ssh/sshd_config
+echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
+# Hapus baris duplikat
+awk '!x[$0]++' /etc/ssh/sshd_config > /etc/ssh/sshd_config.tmp && mv /etc/ssh/sshd_config.tmp /etc/ssh/sshd_config
+
+systemctl restart ssh || systemctl restart sshd
 }
 
 # ==================== FUNCTION INSTALLASI ====================
