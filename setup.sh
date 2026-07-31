@@ -176,7 +176,31 @@ bash tools.sh
 clear
 start=$(date +%s)
 ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
-apt install git curl -y
+apt install git curl squid -y
+
+# Konfigurasi Squid
+cat > /etc/squid/squid.conf << END
+acl localhost src 127.0.0.1/32 ::1
+acl to_localhost dst 127.0.0.1/32 ::1
+acl SSL_ports port 443
+acl Safe_ports port 80
+acl Safe_ports port 21
+acl Safe_ports port 443
+acl Safe_ports port 70
+acl Safe_ports port 210
+acl Safe_ports port 1025-65535
+acl Safe_ports port 280
+acl Safe_ports port 488
+acl Safe_ports port 591
+acl Safe_ports port 777
+acl CONNECT method CONNECT
+http_access allow localhost
+http_access allow all
+http_port 3128
+http_port 8080
+visible_hostname PeyxDev
+END
+systemctl restart squid
 
 # Install python dengan fallback ke python3
 if command -v python3 &>/dev/null; then
@@ -193,6 +217,10 @@ if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g
    [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "debian" ]]; then
     apt install python-is-python3 -y
 fi
+
+# Konfigurasi SSH
+wget -q -O /etc/ssh/sshd_config "${REPO}project/examples/sshd"
+systemctl restart ssh
 }
 
 # ==================== FUNCTION INSTALLASI ====================
