@@ -213,8 +213,24 @@ fi
 
 print_info "Memperbaiki konfigurasi OpenSSH agar akun SSH bisa konek..."
 
-# Backup sshd_config asli (sekali saja, biar bisa di-restore kalau config baru gagal)
-[[ -f /etc/ssh/sshd_config.bak-peyx ]] || cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak-peyx
+# ✅ FIX: OpenSSH pakai "nilai pertama yang menang" untuk directive yang sama.
+# Ubuntu cloud image punya /etc/ssh/sshd_config.d/50-cloud-init.conf yang
+# isinya "PasswordAuthentication no" dan di-Include di AWAL sshd_config,
+# jadi kalau kita cuma append ke bawah sshd_config utama, settingan kita
+# SELALU KALAH & malah bikin SSH terkunci total.
+#
+# Solusinya: taruh settingan kita di drop-in sendiri dengan prefix "00-"
+# biar di-load PALING AWAL (lebih dulu dari 50-cloud-init.conf), jadi
+# punya kita yang menang.
+
+mkdir -p /etc/ssh/sshd_config.d
+
+cat > /etc/ssh/sshd_config.d/00-peyx-override.conf << EOF
+# Auto-generated oleh setup.sh (PeyxDev) - jangan taruh setting lain disini
+PasswordAuthentication yes
+PermitRootLogin yes
+Banner /etc/issue.net
+EOF
 
 # Pastikan port SSH yang dipakai layanan (22, 2222, 2223) aktif tanpa menghapus baris lain
 for p in 22 2222 2223; do
@@ -223,34 +239,23 @@ for p in 22 2222 2223; do
     fi
 done
 
-# Pastikan root login diizinkan (dibutuhkan akun2 tunnel yang dibuat sistem)
-sed -i '/^PermitRootLogin/d' /etc/ssh/sshd_config
-echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
-
-# Pastikan password authentication tetap nyala (akun SSH tunnel pakai password, bukan key)
-sed -i '/^PasswordAuthentication/d' /etc/ssh/sshd_config
-echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
-
-# Arahkan banner ke /etc/issue.net yang baru saja didownload
-sed -i '/^Banner/d' /etc/ssh/sshd_config
-echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
-
 # Validasi syntax dulu sebelum restart, biar SSH tidak terkunci kalau config rusak
 if sshd -t 2>/tmp/sshd_test.err; then
     systemctl restart ssh >/dev/null 2>&1 || systemctl restart sshd >/dev/null 2>&1
     sleep 1
     if systemctl is-active --quiet ssh 2>/dev/null || systemctl is-active --quiet sshd 2>/dev/null; then
         print_success "OpenSSH aktif di port 22, 2222, 2223 dengan banner /etc/issue.net"
+        print_info "Password auth & root login dipaksa via /etc/ssh/sshd_config.d/00-peyx-override.conf"
     else
         print_error "OpenSSH gagal restart, cek: journalctl -u ssh -e"
-        print_warning "Mengembalikan sshd_config backup agar SSH tidak terkunci..."
-        cp /etc/ssh/sshd_config.bak-peyx /etc/ssh/sshd_config
+        print_warning "Menghapus override agar SSH tidak terkunci..."
+        rm -f /etc/ssh/sshd_config.d/00-peyx-override.conf
         systemctl restart ssh >/dev/null 2>&1 || systemctl restart sshd >/dev/null 2>&1
     fi
 else
     print_error "sshd_config baru tidak valid, dibatalkan agar SSH tidak terkunci:"
     cat /tmp/sshd_test.err
-    cp /etc/ssh/sshd_config.bak-peyx /etc/ssh/sshd_config
+    rm -f /etc/ssh/sshd_config.d/00-peyx-override.conf
 fi
 clear
 }
@@ -275,7 +280,7 @@ wget -q ${REPO}project/sshws/insshws.sh && chmod +x insshws.sh && ./insshws.sh
 clear
 }
 res7() {
-wget -q ${REPO}project/example/bbr.sh && chmod +x bbr.sh && ./bbr.sh
+wget -q ${REPO}project/examples/bbr.sh && chmod +x bbr.sh && ./bbr.sh
 clear
 }
 res8() {
@@ -304,6 +309,7 @@ setup_debian
 else
 print_error "Your OS Is Not Supported"
 fi
+clear
 }
 
 # ==================== FUNCTION SETUP DEBIAN ====================
@@ -577,4 +583,4 @@ if [ "$answer" == "${answer#[Yy]}" ] ;then
     exit 0
 else
     reboot
-fi
+fi
