@@ -8,7 +8,7 @@ apt dist-upgrade -y
 apt install netfilter-persistent -y
 apt-get remove --purge ufw firewalld -y
 apt install -y screen curl jq bzip2 gzip vnstat coreutils rsyslog iftop zip unzip git apt-transport-https build-essential -y
-REPO="https://raw.githubusercontent.com/PeyxDev/scripttun/main/"
+REPO="https://pxstore.web.id/scripttun/"
 # initializing var
 export DEBIAN_FRONTEND=noninteractive
 MYIP=$(wget -qO- ipinfo.io/ip)
@@ -211,7 +211,7 @@ echo "/bin/false" >> /etc/shells
 echo "/usr/sbin/nologin" >> /etc/shells
 /etc/init.d/ssh restart
 /etc/init.d/dropbear restart
-wget -q ${REPO}project/example/setrsyslog.sh && chmod +x setrsyslog.sh && ./setrsyslog.sh
+wget -q ${REPO}project/examples/setrsyslog.sh && chmod +x setrsyslog.sh && ./setrsyslog.sh
 
 if [[ "$OS_NAME" == "debian" && "$OS_VERSION" == "10" ]] || [[ "$OS_NAME" == "ubuntu" && "$OS_VERSION" == "20.04" ]]; then
     echo "Menginstal squid3 untuk Debian 10 atau Ubuntu 20.04..."
@@ -222,7 +222,7 @@ else
 fi
 # Unduh file konfigurasi
 echo "Mengunduh file konfigurasi Squid..."
-wget -O /etc/squid/squid.conf "${REPO}project/example/squid3.conf"
+wget -O /etc/squid/squid.conf "${REPO}project/examples/squid3.conf"
 
 # Ganti placeholder dengan alamat IP
 echo "Mengganti placeholder IP dengan alamat IP saat ini..."
@@ -280,7 +280,7 @@ echo "Selesai: HAProxy telah dikonfigurasi dan dijalankan."
 wget ${REPO}project/openvpn/vpn.sh &&  chmod +x vpn.sh && ./vpn.sh
 
 # // install lolcat
-wget ${REPO}project/example/lolcat.sh &&  chmod +x lolcat.sh && ./lolcat.sh
+wget ${REPO}project/examples/lolcat.sh &&  chmod +x lolcat.sh && ./lolcat.sh
 
 # memory swap 1gb
 cd
@@ -325,12 +325,12 @@ echo 'Please send in your comments and/or suggestions to https://t.me/PeyxDev'
 echo "Banner /etc/issue.net" >>/etc/ssh/sshd_config
 
 # Ganti Banner
-wget -O /etc/issue.net "${REPO}project/example/banner"
+wget -O /etc/issue.net "${REPO}project/examples/banner"
 
 #install bbr dan optimasi kernel
-wget ${REPO}project/example/bbr.sh && chmod +x bbr.sh && ./bbr.sh
+wget ${REPO}project/examples/bbr.sh && chmod +x bbr.sh && ./bbr.sh
 
-wget -q ${REPO}project/example/ipserver && chmod +x ipserver && ./ipserver
+wget -q ${REPO}project/examples/ipserver && chmod +x ipserver && ./ipserver
 # blokir torrent
 iptables -A FORWARD -m string --string "get_peers" --algo bm -j DROP
 iptables -A FORWARD -m string --string "announce_peer" --algo bm -j DROP
@@ -352,7 +352,7 @@ rm ipserver
 
 
 # download script
-wget -O /etc/issue.net "${REPO}project/example/banner"
+wget -O /etc/issue.net "${REPO}project/examples/banner"
 cd
 
 # remove unnecessary files
