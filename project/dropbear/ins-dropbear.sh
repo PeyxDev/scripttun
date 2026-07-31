@@ -84,7 +84,7 @@ print_success "Paket dropbear terinstall"
 systemctl stop dropbear >/dev/null 2>&1
 
 # ==================== KONFIGURASI /etc/default/dropbear ====================
-print_info "Konfigurasi /etc/default/dropbear (port ${DROPBEAR_PORT})"
+print_info "Konfigurasi /etc/default/dropbear (ports 109, 143, 442, ${DROPBEAR_PORT})"
 
 DEFAULTCFG="/etc/default/dropbear"
 touch "$DEFAULTCFG"
@@ -98,11 +98,9 @@ set_default() {
     fi
 }
 
-set_default "DROPBEAR_PORT" "${DROPBEAR_PORT}"
+set_default "DROPBEAR_PORT" "143"
 set_default "DROPBEAR_RECEIVE_WINDOW" "65536"
-# String kosong tapi tetap dideklarasikan biar systemd gak warning
-# "Referenced but unset environment variable evaluates to an empty string"
-set_default "DROPBEAR_EXTRA_ARGS" '""'
+set_default "DROPBEAR_EXTRA_ARGS" "\"-p 109 -p 442 -p 58080\""
 set_default "NO_START" "0"
 
 print_success "Konfigurasi port & opsi dropbear disimpan"
