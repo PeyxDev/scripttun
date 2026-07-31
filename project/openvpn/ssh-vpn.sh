@@ -167,11 +167,11 @@ systemctl restart php${PHP_VER}-fpm nginx
 
 # install badvpn
 cd
-wget -O /usr/sbin/badvpn "${REPO}project/Badvpn-UDPGW/badvpn" >/dev/null 2>&1
+wget -O /usr/sbin/badvpn "${REPO}project/BadVPN-UDPGW/badvpn" >/dev/null 2>&1
 chmod +x /usr/sbin/badvpn > /dev/null 2>&1
-wget -q -O /etc/systemd/system/badvpn1.service "${REPO}project/Badvpn-UDPGW/badvpn1.service" >/dev/null 2>&1
-wget -q -O /etc/systemd/system/badvpn2.service "${REPO}project/Badvpn-UDPGW/badvpn2.service" >/dev/null 2>&1
-wget -q -O /etc/systemd/system/badvpn3.service "${REPO}project/Badvpn-UDPGW/badvpn3.service" >/dev/null 2>&1
+wget -q -O /etc/systemd/system/badvpn1.service "${REPO}project/BadVPN-UDPGW/badvpn1.service" >/dev/null 2>&1
+wget -q -O /etc/systemd/system/badvpn2.service "${REPO}project/BadVPN-UDPGW/badvpn2.service" >/dev/null 2>&1
+wget -q -O /etc/systemd/system/badvpn3.service "${REPO}project/BadVPN-UDPGW/badvpn3.service" >/dev/null 2>&1
 systemctl disable badvpn1 
 systemctl stop badvpn1 
 systemctl enable badvpn1
