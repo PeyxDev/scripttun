@@ -132,10 +132,14 @@ chmod 644 /etc/xray/xray.key
 
 # nginx renew ssl
 echo -n '#!/bin/bash
-/etc/init.d/nginx stop
+systemctl stop nginx
+systemctl stop haproxy
 "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" &> /root/renew_ssl.log
-/etc/init.d/nginx start
-/etc/init.d/nginx status
+# Re-generate PEM untuk HAProxy setelah renew
+cat /etc/xray/xray.key /etc/xray/xray.crt | tee /etc/haproxy/hap.pem
+systemctl start xray
+systemctl start nginx
+systemctl start haproxy
 ' > /usr/local/bin/ssl_renew.sh
 chmod +x /usr/local/bin/ssl_renew.sh
 if ! grep -q 'ssl_renew.sh' /var/spool/cron/crontabs/root;then (crontab -l;echo "15 03 */3 * * /usr/local/bin/ssl_renew.sh") | crontab;fi
