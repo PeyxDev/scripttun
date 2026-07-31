@@ -1,6 +1,6 @@
 [Unit]
 Description=UDP 7200
-Documentation=https://t.me/bhoikfost_yahya
+Documentation=https://t.me/PeyxDev
 After=syslog.target network-online.target
 
 [Service]
