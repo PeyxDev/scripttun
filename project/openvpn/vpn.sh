@@ -10,18 +10,18 @@ REPO="https://raw.githubusercontent.com/PeyxDev/scrippttun/main/"
 # initialisasi var
 export DEBIAN_FRONTEND=noninteractive
 OS=`uname -m`;
-MYIP=$(wget -qO- ipinfo.io/ip);
+MYIP="$(wget -qO- ipinfo.io/ip)";
 MYIP2="s/xxxxxxxxx/$MYIP/g";
-ANU=$(ip -o $ANU -4 route show to default | awk '{print $5}');
+ANU="$(ip -o $ANU -4 route show to default | awk '{print $5}')";
 
 # Install OpenVPN dan Easy-RSA
 apt install openvpn easy-rsa unzip -y
 apt install openssl iptables iptables-persistent -y
 mkdir -p /etc/openvpn/server/easy-rsa/
 cd /etc/openvpn/
-wget ${REPO}project/openvpn/vpn.zip
-unzip vpn.zip
-rm -f vpn.zip
+wget "${REPO}project/openvpn/openvpn.zip"
+unzip openvpn.zip
+rm -f openvpn.zip
 chown -R root:root /etc/openvpn/server/easy-rsa/
 
 cd
