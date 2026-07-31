@@ -42,7 +42,7 @@ END
 
 # Dropbear OHP 8282
 cat > /etc/systemd/system/dropbear-ohp.service << END
-[Unit]]
+[Unit]
 Description=Dropbear OHP Redirection Service
 Documentation=https://t.me/PeyxDev
 After=network.target nss-lookup.target
@@ -63,7 +63,7 @@ END
 
 # OpenVPN OHP 8383
 cat > /etc/systemd/system/openvpn-ohp.service << END
-[Unit]]
+[Unit]
 Description=OpenVPN OHP Redirection Service
 Documentation=https://t.me/PeyxDev
 After=network.target nss-lookup.target
