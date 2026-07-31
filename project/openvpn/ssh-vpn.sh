@@ -148,14 +148,113 @@ rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/sites-available/default
 curl ${REPO}project/nginx/nginx.conf > /etc/nginx/nginx.conf
 curl ${REPO}project/nginx/vps.conf > /etc/nginx/conf.d/vps.conf
-sed -i 's/listen = \/var\/run\/php-fpm.sock/listen = 127.0.0.1:9000/g' /etc/php/fpm/pool.d/www.conf
+
+# ===== FIX PHP-FPM PATH =====
+PHP_VER=$(php -v 2>/dev/null | head -1 | cut -d' ' -f2 | cut -d'.' -f1,2)
+if [ -f "/etc/php/$PHP_VER/fpm/pool.d/www.conf" ]; then
+    sed -i 's/listen = \/var\/run\/php-fpm.sock/listen = 127.0.0.1:9000/g' /etc/php/$PHP_VER/fpm/pool.d/www.conf
+    sed -i 's/listen = \/run\/php\/php.*-fpm.sock/listen = 127.0.0.1:9000/g' /etc/php/$PHP_VER/fpm/pool.d/www.conf
+fi
+
+# ===== BUAT FOLDER =====
 mkdir -p /home/vps/public_html
-echo "<?php phpinfo() ?>" > /home/vps/public_html/info.php
+
+# ===== BUAT INFO.PHP =====
+cat > /home/vps/public_html/info.php <<'EOF'
+<?php
+phpinfo();
+?>
+EOF
+
+# ===== BUAT INDEX.HTML (TANPA DOWNLOAD) =====
+cat > /home/vps/public_html/index.html <<'EOF'
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selamat Datang di VPS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .emoji { font-size: 4em; display: block; margin-bottom: 20px; }
+        p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        .info {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+        .status {
+            display: inline-block;
+            padding: 8px 20px;
+            background: #4CAF50;
+            border-radius: 20px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        a {
+            color: #fff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="emoji">🚀</span>
+        <h1>VPS Berjalan</h1>
+        <p>Server siap digunakan untuk berbagai keperluan</p>
+        <div class="status">✅ ONLINE</div>
+        <div class="info">
+            <strong>📅 Tanggal:</strong> <?php echo date('d-m-Y H:i:s'); ?><br>
+            <strong>🌐 IP Server:</strong> <?php echo $_SERVER['SERVER_ADDR']; ?><br>
+            <strong>📂 PHP Info:</strong> <a href="info.php">Klik disini</a>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+
+# ===== SET PERMISSION =====
 chown -R www-data:www-data /home/vps/public_html
-chmod -R g+rw /home/vps/public_html
-cd /home/vps/public_html
-wget -O /home/vps/public_html/index.html "${REPO}project/example/index.html1"
-/etc/init.d/nginx restart
+chmod -R 755 /home/vps/public_html
+
+# ===== RESTART SERVICE =====
+systemctl restart php${PHP_VER}-fpm 2>/dev/null || systemctl restart php-fpm 2>/dev/null
+systemctl restart nginx
+
+# ===== CEK STATUS =====
+echo "✅ Nginx Status:"
 
 # install badvpn
 cd
