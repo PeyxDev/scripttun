@@ -202,7 +202,7 @@ wget -q ${REPO}project/openvpn/ins-openvpn.sh && chmod +x ins-openvpn.sh && ./in
 clear
 }
 res3() {
-wget -q ${REPO}project/dropbear/dropbear.sh && chmod +x dropbear.sh && bash dropbear.sh
+wget -q ${REPO}project/dropbear/ins-dropbear.sh && chmod +x ins-dropbear.sh && ./ins-dropbear.sh
 clear
 }
 res4() {
@@ -226,15 +226,15 @@ wget -q ${REPO}project/sshws/ohp.sh && chmod +x ohp.sh && ./ohp.sh
 clear
 }
 res9() {
-wget -q ${REPO}menu/update.sh && chmod +x update.sh && bash update.sh
+wget -q ${REPO}menu/update.sh && chmod +x update.sh && ./update.sh
 clear
 }
 res10() { 
-wget -q ${REPO}udp/udp-custom.sh && chmod +x udp-custom.sh && bash udp-custom.sh
+wget -q ${REPO}project/udp/udp-custom.sh && chmod +x udp-custom.sh && ./udp-custom.sh
 clear
 }
 res11() {
-wget -q ${REPO}project/api/api-px.sh && chmod +x api-px.sh && bash api-px.sh
+wget -q ${REPO}project/api/api-px.sh && chmod +x api-px.sh && ./api-px.sh
 clear
 }
 
