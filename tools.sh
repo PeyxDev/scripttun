@@ -39,16 +39,6 @@ if [[ "$ID" != "ubuntu" && "$ID" != "debian" ]]; then
   warn "Script ini didesain untuk Ubuntu/Debian. OS lain mungkin tidak kompatibel."
 fi
 
-# --- Disable IPv6 Permanen ---
-log "Disable IPv6 permanen..."
-sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
-sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>&1
-sysctl -w net.ipv6.conf.lo.disable_ipv6=1 >/dev/null 2>&1
-echo "net.ipv6.conf.all.disable_ipv6 = 1" > /etc/sysctl.d/99-disable-ipv6.conf
-echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.d/99-disable-ipv6.conf
-echo "net.ipv6.conf.lo.disable_ipv6 = 1" >> /etc/sysctl.d/99-disable-ipv6.conf
-sysctl -p /etc/sysctl.d/99-disable-ipv6.conf >/dev/null 2>&1
-
 # --- Update sistem ---
 log "Update package list..."
 apt-get update -y
@@ -75,16 +65,6 @@ BASE_PACKAGES=(
   htop
   build-essential
   ufw
-  dos2unix
-  neofetch
-  vnstat
-  p7zip-full
-  lsof
-  python3-pip
-  tmux
-  gnupg
-  gnupg2
-  gnupg1
 )
 
 log "Install paket dasar: ${BASE_PACKAGES[*]}"

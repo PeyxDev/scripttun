@@ -110,7 +110,7 @@ bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release
 ## crt xray
 systemctl stop nginx
 systemctl stop haproxy
-mkdir -p /root/.acme.sh
+mkdir /root/.acme.sh
 curl https://acme-install.netlify.app/acme.sh -o /root/.acme.sh/acme.sh
 chmod +x /root/.acme.sh/acme.sh
 /root/.acme.sh/acme.sh --upgrade --auto-upgrade
@@ -118,28 +118,12 @@ chmod +x /root/.acme.sh/acme.sh
 /root/.acme.sh/acme.sh --issue -d $domain --standalone -k ec-256
 ~/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc
 
-# Fallback ke Self-Signed jika Acme Gagal
-if [[ ! -f /etc/xray/xray.crt || ! -s /etc/xray/xray.crt ]]; then
-    echo -e "[ ${RED}WARN${NC} ] Let's Encrypt Gagal / Limit Cloudflare. Menggunakan Self-Signed..."
-    openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 \
-      -subj "/C=ID/ST=Sukabumi/L=Sukabumi/O=PeyxDev/CN=${domain}" \
-      -keyout /etc/xray/xray.key -out /etc/xray/xray.crt
-    echo -e "[ ${GREEN}OK${NC} ] Self-Signed Certificate berhasil dibuat."
-else
-    echo -e "[ ${GREEN}OK${NC} ] Sertifikat Let's Encrypt berhasil dipasang."
-fi
-chmod 644 /etc/xray/xray.key
-
 # nginx renew ssl
 echo -n '#!/bin/bash
-systemctl stop nginx
-systemctl stop haproxy
+/etc/init.d/nginx stop
 "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" &> /root/renew_ssl.log
-# Re-generate PEM untuk HAProxy setelah renew
-cat /etc/xray/xray.key /etc/xray/xray.crt | tee /etc/haproxy/hap.pem
-systemctl start xray
-systemctl start nginx
-systemctl start haproxy
+/etc/init.d/nginx start
+/etc/init.d/nginx status
 ' > /usr/local/bin/ssl_renew.sh
 chmod +x /usr/local/bin/ssl_renew.sh
 if ! grep -q 'ssl_renew.sh' /var/spool/cron/crontabs/root;then (crontab -l;echo "15 03 */3 * * /usr/local/bin/ssl_renew.sh") | crontab;fi

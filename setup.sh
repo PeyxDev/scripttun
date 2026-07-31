@@ -176,31 +176,7 @@ bash tools.sh
 clear
 start=$(date +%s)
 ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
-apt install git curl squid -y
-
-# Konfigurasi Squid
-cat > /etc/squid/squid.conf << END
-acl localhost src 127.0.0.1/32 ::1
-acl to_localhost dst 127.0.0.1/32 ::1
-acl SSL_ports port 443
-acl Safe_ports port 80
-acl Safe_ports port 21
-acl Safe_ports port 443
-acl Safe_ports port 70
-acl Safe_ports port 210
-acl Safe_ports port 1025-65535
-acl Safe_ports port 280
-acl Safe_ports port 488
-acl Safe_ports port 591
-acl Safe_ports port 777
-acl CONNECT method CONNECT
-http_access allow localhost
-http_access allow all
-http_port 3128
-http_port 8080
-visible_hostname PeyxDev
-END
-systemctl restart squid
+apt install git curl -y
 
 # Install python dengan fallback ke python3
 if command -v python3 &>/dev/null; then
@@ -217,61 +193,39 @@ if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g
    [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "debian" ]]; then
     apt install python-is-python3 -y
 fi
-
-# Konfigurasi SSH
-wget -q -O /etc/issue.net "${REPO}project/examples/banner"
-sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sed -i 's/^#Banner.*/Banner \/etc\/issue.net/' /etc/ssh/sshd_config
-sed -i 's/^Banner.*/Banner \/etc\/issue.net/' /etc/ssh/sshd_config
-echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
-# Hapus baris duplikat
-awk '!x[$0]++' /etc/ssh/sshd_config > /etc/ssh/sshd_config.tmp && mv /etc/ssh/sshd_config.tmp /etc/ssh/sshd_config
-
-systemctl restart ssh || systemctl restart sshd
 }
 
 # ==================== FUNCTION INSTALLASI ====================
 function Installasi(){
 res2() {
-wget -q ${REPO}project/openvpn/ins-openvpn.sh && chmod +x ins-openvpn.sh && ./ins-openvpn.sh
-clear
+wget -q ${REPO}project/openvpn/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
+clear 
 }
 res3() {
-wget -q ${REPO}project/dropbear/ins-dropbear.sh && chmod +x ins-dropbear.sh && ./ins-dropbear.sh
-clear
-}
-res4() {
-wget -q ${REPO}project/BadVPN-UDPGW/ins-badvpn.sh && chmod +x ins-badvpn.sh && ./ins-badvpn.sh
-clear
-}
-res5() {
 wget -q ${REPO}project/Xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
 clear
 }
-res6() {
+res4() {
 wget -q ${REPO}project/sshws/insshws.sh && chmod +x insshws.sh && ./insshws.sh
 clear
 }
-res7() {
+res5() {
 wget -q ${REPO}project/example/bbr.sh && chmod +x bbr.sh && ./bbr.sh
 clear
 }
-res8() {
+res6() {
 wget -q ${REPO}project/sshws/ohp.sh && chmod +x ohp.sh && ./ohp.sh
 clear
 }
-res9() {
+res7() {
 wget -q ${REPO}menu/update.sh && chmod +x update.sh && ./update.sh
 clear
 }
-res10() { 
+res8() { 
 wget -q ${REPO}project/udp/udp-custom.sh && chmod +x udp-custom.sh && ./udp-custom.sh
 clear
 }
-res11() {
+res9() {
 wget -q ${REPO}project/api/api-px.sh && chmod +x api-px.sh && ./api-px.sh
 clear
 }
@@ -292,32 +246,26 @@ function setup_debian(){
 print_section_header "INSTALL SSH & OPENVPN"
 res2
 
-print_section_header "INSTALL DROPBEAR"
+print_section_header "INSTALL XRAY MOD PX"
 res3
 
-print_section_header "INSTALL BADVPN-UDPGW"
+print_section_header "INSTALL WEBSOCKET"
 res4
 
-print_section_header "INSTALL XRAY MOD PX"
+print_section_header "INSTALL BBR"
 res5
 
-print_section_header "INSTALL WEBSOCKET"
+print_section_header "INSTALL OHP"
 res6
 
-print_section_header "INSTALL BBR"
+print_section_header "EXTRA MENU"
 res7
 
-print_section_header "INSTALL OHP"
+print_section_header "UDP CUSTOM"
 res8
 
-print_section_header "EXTRA MENU"
-res9
-
-print_section_header "UDP CUSTOM"
-res10
-
 print_section_header "API SERVER"
-res11
+res9
 }
 
 # ==================== FUNCTION SETUP UBUNTU ====================
@@ -325,32 +273,26 @@ function setup_ubuntu(){
 print_section_header "INSTALL SSH & OPENVPN"
 res2
 
-print_section_header "INSTALL DROPBEAR"
+print_section_header "INSTALL XRAY MOD PX"
 res3
 
-print_section_header "INSTALL BADVPN-UDPGW"
+print_section_header "INSTALL WEBSOCKET"
 res4
 
-print_section_header "INSTALL XRAY MOD PX"
+print_section_header "INSTALL BBR"
 res5
 
-print_section_header "INSTALL WEBSOCKET"
+print_section_header "INSTALL OHP"
 res6
 
-print_section_header "INSTALL BBR"
+print_section_header "EXTRA MENU"
 res7
 
-print_section_header "INSTALL OHP"
+print_section_header "UDP CUSTOM"
 res8
 
-print_section_header "EXTRA MENU"
-res9
-
-print_section_header "UDP CUSTOM"
-res10
-
 print_section_header "API SERVER"
-res11
+res9
 }
 
 # ==================== FUNGSI GET ISP & CITY (TANPA FILE) ====================
