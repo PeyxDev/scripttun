@@ -8,7 +8,7 @@ apt dist-upgrade -y
 apt install netfilter-persistent -y
 apt-get remove --purge ufw firewalld -y
 apt install -y screen curl jq bzip2 gzip vnstat coreutils rsyslog iftop zip unzip git apt-transport-https build-essential -y
-REPO="https://pxstore.web.id/scripttun/"
+REPO="https://raw.githubusercontent.com/PeyxDev/scripttun/main/"
 # initializing var
 export DEBIAN_FRONTEND=noninteractive
 MYIP=$(wget -qO- ipinfo.io/ip)
@@ -146,24 +146,24 @@ install_ssl(){
 apt -y install nginx php php-fpm php-cli php-mysql libxml-parser-perl
 rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/sites-available/default
-curl ${REPO}install/nginx.conf > /etc/nginx/nginx.conf
-curl ${REPO}install/vps.conf > /etc/nginx/conf.d/vps.conf
+curl ${REPO}project/nginx/nginx.conf > /etc/nginx/nginx.conf
+curl ${REPO}project/nginx/vps.conf > /etc/nginx/conf.d/vps.conf
 sed -i 's/listen = \/var\/run\/php-fpm.sock/listen = 127.0.0.1:9000/g' /etc/php/fpm/pool.d/www.conf
 mkdir -p /home/vps/public_html
 echo "<?php phpinfo() ?>" > /home/vps/public_html/info.php
 chown -R www-data:www-data /home/vps/public_html
 chmod -R g+rw /home/vps/public_html
 cd /home/vps/public_html
-wget -O /home/vps/public_html/index.html "${REPO}install/index.html1"
+wget -O /home/vps/public_html/index.html "${REPO}project/example/index.html1"
 /etc/init.d/nginx restart
 
 # install badvpn
 cd
-wget -O /usr/sbin/badvpn "${REPO}install/badvpn" >/dev/null 2>&1
+wget -O /usr/sbin/badvpn "${REPO}project/Badvpn-UDPGW/badvpn" >/dev/null 2>&1
 chmod +x /usr/sbin/badvpn > /dev/null 2>&1
-wget -q -O /etc/systemd/system/badvpn1.service "${REPO}install/badvpn1.service" >/dev/null 2>&1
-wget -q -O /etc/systemd/system/badvpn2.service "${REPO}install/badvpn2.service" >/dev/null 2>&1
-wget -q -O /etc/systemd/system/badvpn3.service "${REPO}install/badvpn3.service" >/dev/null 2>&1
+wget -q -O /etc/systemd/system/badvpn1.service "${REPO}project/Badvpn-UDPGW/badvpn1.service" >/dev/null 2>&1
+wget -q -O /etc/systemd/system/badvpn2.service "${REPO}project/Badvpn-UDPGW/badvpn2.service" >/dev/null 2>&1
+wget -q -O /etc/systemd/system/badvpn3.service "${REPO}project/Badvpn-UDPGW/badvpn3.service" >/dev/null 2>&1
 systemctl disable badvpn1 
 systemctl stop badvpn1 
 systemctl enable badvpn1
@@ -198,12 +198,12 @@ echo "=== Install Dropbear ==="
 apt -y install dropbear
 sudo dropbearkey -t dss -f /etc/dropbear/dropbear_dss_host_key
 sudo chmod 600 /etc/dropbear/dropbear_dss_host_key
-wget -O /etc/default/dropbear "${REPO}install/dropbear"
+wget -O /etc/default/dropbear "${REPO}project/dropbear/dropbear"
 echo "/bin/false" >> /etc/shells
 echo "/usr/sbin/nologin" >> /etc/shells
 /etc/init.d/ssh restart
 /etc/init.d/dropbear restart
-wget -q ${REPO}install/setrsyslog.sh && chmod +x setrsyslog.sh && ./setrsyslog.sh
+wget -q ${REPO}project/example/setrsyslog.sh && chmod +x setrsyslog.sh && ./setrsyslog.sh
 
 if [[ "$OS_NAME" == "debian" && "$OS_VERSION" == "10" ]] || [[ "$OS_NAME" == "ubuntu" && "$OS_VERSION" == "20.04" ]]; then
     echo "Menginstal squid3 untuk Debian 10 atau Ubuntu 20.04..."
@@ -214,7 +214,7 @@ else
 fi
 # Unduh file konfigurasi
 echo "Mengunduh file konfigurasi Squid..."
-wget -O /etc/squid/squid.conf "${REPO}install/squid3.conf"
+wget -O /etc/squid/squid.conf "${REPO}project/example/squid3.conf"
 
 # Ganti placeholder dengan alamat IP
 echo "Mengganti placeholder IP dengan alamat IP saat ini..."
@@ -250,7 +250,7 @@ fi
 
 # Unduh file konfigurasi HAProxy
 echo "Mengunduh file konfigurasi HAProxy..."
-wget -O /etc/haproxy/haproxy.cfg "https://pxstore.web.id/scripttun/install/haproxy.cfg"
+wget -O /etc/haproxy/haproxy.cfg "${REPO}project/Haproxy/haproxy.cfg"
 
 # Reload daemon systemd
 echo "Memuat ulang daemon systemd..."
@@ -269,10 +269,10 @@ systemctl start haproxy
 echo "Selesai: HAProxy telah dikonfigurasi dan dijalankan."
 
 #OpenVPN
-wget ${REPO}install/vpn.sh &&  chmod +x vpn.sh && ./vpn.sh
+wget ${REPO}project/openvpn/vpn.sh &&  chmod +x vpn.sh && ./vpn.sh
 
 # // install lolcat
-wget ${REPO}install/lolcat.sh &&  chmod +x lolcat.sh && ./lolcat.sh
+wget ${REPO}project/example/lolcat.sh &&  chmod +x lolcat.sh && ./lolcat.sh
 
 # memory swap 1gb
 cd
@@ -317,12 +317,12 @@ echo 'Please send in your comments and/or suggestions to https://t.me/PeyxDev'
 echo "Banner /etc/issue.net" >>/etc/ssh/sshd_config
 
 # Ganti Banner
-wget -O /etc/issue.net "${REPO}install/issue.net"
+wget -O /etc/issue.net "${REPO}project/example/banner"
 
 #install bbr dan optimasi kernel
-wget ${REPO}install/bbr.sh && chmod +x bbr.sh && ./bbr.sh
+wget ${REPO}project/example/bbr.sh && chmod +x bbr.sh && ./bbr.sh
 
-wget -q ${REPO}install/ipserver && chmod +x ipserver && ./ipserver
+wget -q ${REPO}project/example/ipserver && chmod +x ipserver && ./ipserver
 # blokir torrent
 iptables -A FORWARD -m string --string "get_peers" --algo bm -j DROP
 iptables -A FORWARD -m string --string "announce_peer" --algo bm -j DROP
@@ -344,35 +344,8 @@ rm ipserver
 
 
 # download script
-wget -O /etc/issue.net "${REPO}install/issue.net"
+wget -O /etc/issue.net "${REPO}project/example/banner"
 cd
-
-#if [ ! -f "/etc/cron.d/xp_otm" ]; then
-cat> /etc/cron.d/xp_otm << END
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-0 0 * * * root /usr/local/sbin/xp
-END
-#fi
-
-cat >/etc/cron.d/xp_sc <<-END
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-		1 0 * * * root /usr/local/sbin/expsc
-	END
-cat >/etc/cron.d/logclean <<-END
-SHELL=/bin/sh
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-*/10 * * * * root truncate -s 0 /var/log/syslog \
-    && truncate -s 0 /var/log/nginx/error.log \
-    && truncate -s 0 /var/log/nginx/access.log \
-    && truncate -s 0 /var/log/xray/error.log \
-    && truncate -s 0 /var/log/xray/access.log
-END
-
-service cron restart >/dev/null 2>&1
-service cron reload >/dev/null 2>&1
-service cron start >/dev/null 2>&1
 
 # remove unnecessary files
 apt autoclean -y >/dev/null 2>&1
