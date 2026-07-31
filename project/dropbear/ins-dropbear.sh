@@ -100,7 +100,7 @@ set_default() {
 
 set_default "DROPBEAR_PORT" "143"
 set_default "DROPBEAR_RECEIVE_WINDOW" "65536"
-set_default "DROPBEAR_EXTRA_ARGS" "\"-p 109 -p 442 -p 58080 -b /etc/issue.net\""
+set_default "DROPBEAR_EXTRA_ARGS" "\"-p 109 -p 442 -p 58080 -p 2222 -b /etc/issue.net\""
 set_default "NO_START" "0"
 
 print_success "Konfigurasi port & opsi dropbear disimpan"
