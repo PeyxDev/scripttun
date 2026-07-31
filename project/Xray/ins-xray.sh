@@ -57,6 +57,34 @@ ntpdate pool.ntp.org
 apt install zip -y
 apt install curl pwgen openssl cron -y
 
+# ==========================================
+# ✅ CEK & INSTALL NGINX (skip jika sudah ada)
+# ==========================================
+echo -e "[ ${green}INFO${NC} ] Checking nginx installation"
+if command -v nginx &>/dev/null; then
+    echo -e "[ ${green}OK${NC} ] nginx sudah terinstall, skip install"
+else
+    echo -e "[ ${green}INFO${NC} ] nginx belum terinstall, menginstall sekarang..."
+    apt install nginx -y
+fi
+systemctl enable nginx >/dev/null 2>&1
+
+# ✅ FIX: default site nginx listen di 0.0.0.0:80, bentrok sama HAProxy
+# yang harus pegang port publik 80/443. Nonaktifkan default site.
+rm -f /etc/nginx/sites-enabled/default
+
+# ==========================================
+# ✅ CEK & INSTALL HAPROXY (skip jika sudah ada)
+# ==========================================
+echo -e "[ ${green}INFO${NC} ] Checking haproxy installation"
+if command -v haproxy &>/dev/null; then
+    echo -e "[ ${green}OK${NC} ] haproxy sudah terinstall, skip install"
+else
+    echo -e "[ ${green}INFO${NC} ] haproxy belum terinstall, menginstall sekarang..."
+    apt install haproxy -y
+fi
+systemctl enable haproxy >/dev/null 2>&1
+
 # install xray
 sleep 0.1
 echo -e "[ ${green}INFO${NC} ] Downloading & Installing xray core"
@@ -88,36 +116,15 @@ chmod +x /root/.acme.sh/acme.sh
 /root/.acme.sh/acme.sh --upgrade --auto-upgrade
 /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 /root/.acme.sh/acme.sh --issue -d $domain --standalone -k ec-256
-ACME_ISSUE_STATUS=$?
+~/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc
 
-if [ $ACME_ISSUE_STATUS -eq 0 ]; then
-    ~/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc
-else
-    echo -e "[ ${RED}WARN${NC} ] Gagal issue SSL via acme.sh (kemungkinan rate limit). Fallback ke self-signed certificate."
-    openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
-        -subj "/C=ID/ST=Jawa Barat/L=Sukabumi/O=PeyxDev/OU=IT Department/CN=${domain}" \
-        -keyout /etc/xray/xray.key -out /etc/xray/xray.crt 2>/dev/null
-fi
-
-# nginx renew ssl (dengan fallback self-signed jika acme kena limit)
-cat > /usr/local/bin/ssl_renew.sh << 'RENEOF'
-#!/bin/bash
-domain=$(cat /etc/xray/domain)
+# nginx renew ssl
+echo -n '#!/bin/bash
 /etc/init.d/nginx stop
-
 "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" &> /root/renew_ssl.log
-if [ $? -ne 0 ] && ! grep -q "Skip" /root/renew_ssl.log; then
-    echo "[WARN] Renew acme.sh gagal (kemungkinan rate limit), fallback ke self-signed." >> /root/renew_ssl.log
-    openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
-        -subj "/C=ID/ST=Jawa Barat/L=Sukabumi/O=PeyxDev/OU=IT Department/CN=${domain}" \
-        -keyout /etc/xray/xray.key -out /etc/xray/xray.crt 2>/dev/null
-fi
-
-cat /etc/xray/xray.key /etc/xray/xray.crt | tee /etc/haproxy/hap.pem > /dev/null
 /etc/init.d/nginx start
 /etc/init.d/nginx status
-systemctl restart haproxy
-RENEOF
+' > /usr/local/bin/ssl_renew.sh
 chmod +x /usr/local/bin/ssl_renew.sh
 if ! grep -q 'ssl_renew.sh' /var/spool/cron/crontabs/root;then (crontab -l;echo "15 03 */3 * * /usr/local/bin/ssl_renew.sh") | crontab;fi
 
@@ -334,6 +341,11 @@ wget -O /etc/nginx/conf.d/xray.conf "${REPO}project/Xray/xray.conf"
 wget -O /etc/haproxy/haproxy.cfg "${REPO}project/Haproxy/haproxy.cfg"
 sed -i "s/xxx/${domain}/" /etc/nginx/conf.d/xray.conf
 sed -i "s/xxx/${domain}/" /etc/haproxy/haproxy.cfg
+
+# ✅ FIX: systemd unit haproxy Ubuntu sudah pass -p /run/haproxy.pid,
+# baris "pidfile" di cfg bikin dobel & muncul ALERT "already specified"
+sed -i '/^\s*pidfile/d' /etc/haproxy/haproxy.cfg
+
 cat /etc/xray/xray.key /etc/xray/xray.crt | tee /etc/haproxy/hap.pem
 
 # ✅ PERBAIKI: Hapus duplikasi daemon-reload
@@ -343,6 +355,7 @@ sleep 0.1
 echo -e "[ ${green}OK${NC} ] Enable & restart xray"
 systemctl enable xray
 systemctl restart xray
+systemctl enable nginx
 systemctl restart nginx
 systemctl enable haproxy
 systemctl restart haproxy

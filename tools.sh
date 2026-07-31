@@ -39,40 +39,6 @@ if [[ "$ID" != "ubuntu" && "$ID" != "debian" ]]; then
   warn "Script ini didesain untuk Ubuntu/Debian. OS lain mungkin tidak kompatibel."
 fi
 
-# --- Disable IPv6 secara permanen ---
-disable_ipv6() {
-  log "Mendisable IPv6 secara permanen..."
-  
-  # Backup file sysctl.conf
-  if [[ -f /etc/sysctl.conf ]]; then
-    cp /etc/sysctl.conf /etc/sysctl.conf.bak.$(date +%Y%m%d_%H%M%S)
-  fi
-  
-  # Tambahkan konfigurasi disable IPv6
-  cat >> /etc/sysctl.conf << EOF
-
-# Disable IPv6 - ditambahkan oleh tools.sh
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-net.ipv6.conf.lo.disable_ipv6 = 1
-EOF
-
-  # Terapkan konfigurasi
-  sysctl -p
-  
-  # Disable IPv6 pada GRUB (opsional untuk permanen total)
-  if [[ -f /etc/default/grub ]]; then
-    if ! grep -q "ipv6.disable=1" /etc/default/grub; then
-      sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="ipv6.disable=1 /' /etc/default/grub
-      sed -i 's/GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="ipv6.disable=1 /' /etc/default/grub
-      update-grub
-      log "IPv6 telah dinonaktifkan di GRUB. Reboot diperlukan untuk efek penuh."
-    fi
-  fi
-  
-  log "IPv6 berhasil dinonaktifkan."
-}
-
 # --- Update sistem ---
 log "Update package list..."
 apt-get update -y
@@ -99,14 +65,10 @@ BASE_PACKAGES=(
   htop
   build-essential
   ufw
-  dos2unix
 )
 
 log "Install paket dasar: ${BASE_PACKAGES[*]}"
 DEBIAN_FRONTEND=noninteractive apt-get install -y "${BASE_PACKAGES[@]}"
-
-# --- Disable IPv6 ---
-disable_ipv6
 
 # --- Ringkasan versi ---
 echo
@@ -114,9 +76,6 @@ log "=== Ringkasan versi terinstall ==="
 command -v curl >/dev/null 2>&1 && echo "curl : $(curl --version | head -n1)"
 command -v git  >/dev/null 2>&1 && echo "git  : $(git --version)"
 command -v jq   >/dev/null 2>&1 && echo "jq   : $(jq --version)"
-command -v dos2unix >/dev/null 2>&1 && echo "dos2unix : $(dos2unix --version | head -n1)"
 
 echo
 log "Instalasi dependency dasar selesai."
-echo
-log "Catatan: IPv6 telah dinonaktifkan. Jika Anda belum reboot, lakukan reboot sistem untuk efek penuh."

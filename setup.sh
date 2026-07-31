@@ -131,11 +131,11 @@ echo "IP=" >> /var/lib/ipvps.conf
 
 clear
 echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
-echo -e "${purple} │                ${bold_white}WELCOME TO SCRIPT${neutral}              ${purple}│${neutral}"
-echo -e "${purple} │            ${Green}┌─┐─┐ ┬  ┌─┐┌┬┐┌─┐┬─┐┌─┐           ${purple}│${neutral}"
-echo -e "${purple} │            ${Green}├─┘┌┴┬┘  └─┐ │ │ │├┬┘├┤            ${purple}│${neutral}"
-echo -e "${purple} │            ${Green}┴  ┴ └─  └─┘ ┴ └─┘┴└─└─┘           ${neutral}${purple}│${neutral}"
-echo -e "${purple} │         ${YELLOW}Copyright${reset} (C)${GRAY} https://t.me/PeyxDev    ${purple}│${neutral}"
+echo -e "${purple} │                   ${bold_white}PeyxDev${neutral}                     ${purple}│${neutral}"
+echo -e "${purple} │         ${green}┌─┐┬ ┬┌┬┐┌─┐┌─┐┌─┐┬─┐┬┌─┐┌┬┐          ${purple}│${neutral}"
+echo -e "${purple} │         ${green}├─┤│ │ │ │ │└─┐│  ├┬┘│├─┘ │           ${purple}│${neutral}"
+echo -e "${purple} │         ${green}┴ ┴└─┘ ┴ └─┘└─┘└─┘┴└─┴┴   ┴           ${neutral}${purple}│${neutral}"
+echo -e "${purple} │         ${yellow}Copyright${reset} (C)${gray} https://t.me/PeyxDev    ${purple}│${neutral}"
 echo -e "${purple} └───────────────────────────────────────────────┘${neutral}"
 echo -e "${purple} ────────────────────────────────────────────────${neutral}"
 echo ""
@@ -193,40 +193,100 @@ if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g
    [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "debian" ]]; then
     apt install python-is-python3 -y
 fi
-clear
 }
 
 # ==================== FUNCTION INSTALLASI ====================
 function Installasi(){
 res2() {
-wget -q ${REPO}project/openvpn/ssh-ovpn.sh && chmod +x ssh-ovpn.sh && ./ssh-ovpn.sh
-clear 
+wget -q ${REPO}project/openvpn/ins-openvpn.sh && chmod +x ins-openvpn.sh && ./ins-openvpn.sh
+clear
+}
+res_ssh_fix() {
+print_info "Mengunduh banner dan menyimpan ke /etc/issue.net..."
+wget -q ${REPO}project/examples/banner -O /etc/issue.net
+
+if [[ ! -s /etc/issue.net ]]; then
+    print_error "Gagal mengunduh banner dari repo, cek koneksi/REPO"
+else
+    print_success "Banner tersimpan di /etc/issue.net"
+fi
+
+print_info "Memperbaiki konfigurasi OpenSSH agar akun SSH bisa konek..."
+
+# Backup sshd_config asli (sekali saja, biar bisa di-restore kalau config baru gagal)
+[[ -f /etc/ssh/sshd_config.bak-peyx ]] || cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak-peyx
+
+# Pastikan port SSH yang dipakai layanan (22, 2222, 2223) aktif tanpa menghapus baris lain
+for p in 22 2222 2223; do
+    if ! grep -qE "^Port[[:space:]]+${p}([[:space:]]|$)" /etc/ssh/sshd_config; then
+        echo "Port ${p}" >> /etc/ssh/sshd_config
+    fi
+done
+
+# Pastikan root login diizinkan (dibutuhkan akun2 tunnel yang dibuat sistem)
+sed -i '/^PermitRootLogin/d' /etc/ssh/sshd_config
+echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+
+# Pastikan password authentication tetap nyala (akun SSH tunnel pakai password, bukan key)
+sed -i '/^PasswordAuthentication/d' /etc/ssh/sshd_config
+echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+
+# Arahkan banner ke /etc/issue.net yang baru saja didownload
+sed -i '/^Banner/d' /etc/ssh/sshd_config
+echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
+
+# Validasi syntax dulu sebelum restart, biar SSH tidak terkunci kalau config rusak
+if sshd -t 2>/tmp/sshd_test.err; then
+    systemctl restart ssh >/dev/null 2>&1 || systemctl restart sshd >/dev/null 2>&1
+    sleep 1
+    if systemctl is-active --quiet ssh 2>/dev/null || systemctl is-active --quiet sshd 2>/dev/null; then
+        print_success "OpenSSH aktif di port 22, 2222, 2223 dengan banner /etc/issue.net"
+    else
+        print_error "OpenSSH gagal restart, cek: journalctl -u ssh -e"
+        print_warning "Mengembalikan sshd_config backup agar SSH tidak terkunci..."
+        cp /etc/ssh/sshd_config.bak-peyx /etc/ssh/sshd_config
+        systemctl restart ssh >/dev/null 2>&1 || systemctl restart sshd >/dev/null 2>&1
+    fi
+else
+    print_error "sshd_config baru tidak valid, dibatalkan agar SSH tidak terkunci:"
+    cat /tmp/sshd_test.err
+    cp /etc/ssh/sshd_config.bak-peyx /etc/ssh/sshd_config
+fi
+clear
 }
 res3() {
-wget -q ${REPO}project/Xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
+wget -q ${REPO}project/dropbear/ins-dropbear.sh && chmod +x ins-dropbear.sh && ./ins-dropbear.sh
 clear
 }
 res4() {
-wget -q ${REPO}project/sshws/insshws.sh && chmod +x insshws.sh && ./insshws.sh
+wget -q ${REPO}project/BadVPN-UDPGW/ins-badvpn.sh && chmod +x ins-badvpn.sh && ./ins-badvpn.sh
 clear
 }
 res5() {
-wget -q ${REPO}project/examples/bbr.sh && chmod +x bbr.sh && ./bbr.sh
+wget -q ${REPO}project/Xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
 clear
 }
 res6() {
-wget -q ${REPO}project/sshws/ohp.sh && chmod +x ohp.sh && ./ohp.sh
+wget -q ${REPO}project/sshws/insshws.sh && chmod +x insshws.sh && ./insshws.sh
 clear
 }
 res7() {
-wget -q ${REPO}menu/update.sh && chmod +x update.sh && ./update.sh
+wget -q ${REPO}project/example/bbr.sh && chmod +x bbr.sh && ./bbr.sh
 clear
 }
-res8() { 
-wget -q ${REPO}project/udp/udp-custom.sh && chmod +x udp-custom.sh && ./udp-custom.sh
+res8() {
+wget -q ${REPO}project/sshws/ohp.sh && chmod +x ohp.sh && ./ohp.sh
 clear
 }
 res9() {
+wget -q ${REPO}menu/update.sh && chmod +x update.sh && ./update.sh
+clear
+}
+res10() { 
+wget -q ${REPO}project/udp/udp-custom.sh && chmod +x udp-custom.sh && ./udp-custom.sh
+clear
+}
+res11() {
 wget -q ${REPO}project/api/api-px.sh && chmod +x api-px.sh && ./api-px.sh
 clear
 }
@@ -247,26 +307,35 @@ function setup_debian(){
 print_section_header "INSTALL SSH & OPENVPN"
 res2
 
-print_section_header "INSTALL XRAY MOD PX"
+print_section_header "FIX SSH & BANNER"
+res_ssh_fix
+
+print_section_header "INSTALL DROPBEAR"
 res3
 
-print_section_header "INSTALL WEBSOCKET"
+print_section_header "INSTALL BADVPN-UDPGW"
 res4
 
-print_section_header "INSTALL BBR"
+print_section_header "INSTALL XRAY MOD PX"
 res5
 
-print_section_header "INSTALL OHP"
+print_section_header "INSTALL WEBSOCKET"
 res6
 
-print_section_header "EXTRA MENU"
+print_section_header "INSTALL BBR"
 res7
 
-print_section_header "UDP CUSTOM"
+print_section_header "INSTALL OHP"
 res8
 
-print_section_header "API SERVER"
+print_section_header "EXTRA MENU"
 res9
+
+print_section_header "UDP CUSTOM"
+res10
+
+print_section_header "API SERVER"
+res11
 }
 
 # ==================== FUNCTION SETUP UBUNTU ====================
@@ -274,26 +343,35 @@ function setup_ubuntu(){
 print_section_header "INSTALL SSH & OPENVPN"
 res2
 
-print_section_header "INSTALL XRAY MOD PX"
+print_section_header "FIX SSH & BANNER"
+res_ssh_fix
+
+print_section_header "INSTALL DROPBEAR"
 res3
 
-print_section_header "INSTALL WEBSOCKET"
+print_section_header "INSTALL BADVPN-UDPGW"
 res4
 
-print_section_header "INSTALL BBR"
+print_section_header "INSTALL XRAY MOD PX"
 res5
 
-print_section_header "INSTALL OHP"
+print_section_header "INSTALL WEBSOCKET"
 res6
 
-print_section_header "EXTRA MENU"
+print_section_header "INSTALL BBR"
 res7
 
-print_section_header "UDP CUSTOM"
+print_section_header "INSTALL OHP"
 res8
 
-print_section_header "API SERVER"
+print_section_header "EXTRA MENU"
 res9
+
+print_section_header "UDP CUSTOM"
+res10
+
+print_section_header "API SERVER"
+res11
 }
 
 # ==================== FUNGSI GET ISP & CITY (TANPA FILE) ====================
@@ -358,7 +436,7 @@ else
     
     # Jika masih kosong, cek dari repo 1 sebagai fallback
     if [[ -z "$IZIN" ]]; then
-        IZIN=$(curl -s https://raw.githubusercontent.com/peyxdev/scripttun/main/ip | grep "$MYIP" | head -1 | awk '{print $3}')
+        IZIN=$(curl -s https://raw.githubusercontent.com/myridwan/izinvps2/main/ip | grep "$MYIP" | head -1 | awk '{print $3}')
     fi
 fi
 
@@ -452,14 +530,17 @@ chmod 644 /root/.profile
 # Bersihkan file temporary
 rm /root/setup.sh >/dev/null 2>&1
 rm /root/pointing.sh >/dev/null 2>&1
-rm /root/ssh-vpn.sh >/dev/null 2>&1
+rm /root/openvpn.sh >/dev/null 2>&1
 rm /root/ins-xray.sh >/dev/null 2>&1
+rm /root/ins-dropbear.sh >/dev/null 2>&1
 rm /root/insshws.sh >/dev/null 2>&1
-rm /root/bbr.sh >/dev/null 2>&1
+rm /root/set-br.sh >/dev/null 2>&1
 rm /root/ohp.sh >/dev/null 2>&1
 rm /root/update.sh >/dev/null 2>&1
+rm /root/installsl.sh >/dev/null 2>&1
 rm /root/udp-custom.sh >/dev/null 2>&1
 rm /root/api-px.sh >/dev/null 2>&1
+rm /root/install-ziv.sh >/dev/null 2>&1
 
 # Simpan info
 cd
