@@ -266,6 +266,10 @@ res5() {
 wget -q ${REPO}project/Xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
 clear
 }
+res_nginx_redirect() {
+wget -q ${REPO}project/nginx/ins-nginx-redirect.sh && chmod +x ins-nginx-redirect.sh && ./ins-nginx-redirect.sh
+clear
+}
 res6() {
 wget -q ${REPO}project/sshws/insshws.sh && chmod +x insshws.sh && ./insshws.sh
 clear
@@ -319,6 +323,9 @@ res4
 print_section_header "INSTALL XRAY MOD PX"
 res5
 
+print_section_header "NGINX REDIRECT"
+res_nginx_redirect
+
 print_section_header "INSTALL WEBSOCKET"
 res6
 
@@ -354,6 +361,9 @@ res4
 
 print_section_header "INSTALL XRAY MOD PX"
 res5
+
+print_section_header "NGINX REDIRECT"
+res_nginx_redirect
 
 print_section_header "INSTALL WEBSOCKET"
 res6
@@ -528,19 +538,19 @@ END
 chmod 644 /root/.profile
 
 # Bersihkan file temporary
-rm /root/setup.sh >/dev/null 2>&1
-rm /root/pointing.sh >/dev/null 2>&1
-rm /root/openvpn.sh >/dev/null 2>&1
-rm /root/ins-xray.sh >/dev/null 2>&1
-rm /root/ins-dropbear.sh >/dev/null 2>&1
-rm /root/insshws.sh >/dev/null 2>&1
-rm /root/set-br.sh >/dev/null 2>&1
-rm /root/ohp.sh >/dev/null 2>&1
-rm /root/update.sh >/dev/null 2>&1
-rm /root/installsl.sh >/dev/null 2>&1
-rm /root/udp-custom.sh >/dev/null 2>&1
-rm /root/api-px.sh >/dev/null 2>&1
-rm /root/install-ziv.sh >/dev/null 2>&1
+rm -f /root/setup.sh >/dev/null 2>&1
+rm -f /root/tools.sh >/dev/null 2>&1
+rm -f /root/ins-openvpn.sh >/dev/null 2>&1
+rm -f /root/ins-dropbear.sh >/dev/null 2>&1
+rm -f /root/ins-badvpn.sh >/dev/null 2>&1
+rm -f /root/ins-xray.sh >/dev/null 2>&1
+rm -f /root/ins-nginx-redirect.sh >/dev/null 2>&1
+rm -f /root/insshws.sh >/dev/null 2>&1
+rm -f /root/bbr.sh >/dev/null 2>&1
+rm -f /root/ohp.sh >/dev/null 2>&1
+rm -f /root/update.sh >/dev/null 2>&1
+rm -f /root/udp-custom.sh >/dev/null 2>&1
+rm -f /root/api-px.sh >/dev/null 2>&1
 
 # Simpan info
 cd
@@ -567,4 +577,4 @@ if [ "$answer" == "${answer#[Yy]}" ] ;then
     exit 0
 else
     reboot
-fi
+fi
