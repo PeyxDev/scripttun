@@ -57,6 +57,34 @@ ntpdate pool.ntp.org
 apt install zip -y
 apt install curl pwgen openssl cron -y
 
+# ==========================================
+# ✅ CEK & INSTALL NGINX (skip jika sudah ada)
+# ==========================================
+echo -e "[ ${green}INFO${NC} ] Checking nginx installation"
+if command -v nginx &>/dev/null; then
+    echo -e "[ ${green}OK${NC} ] nginx sudah terinstall, skip install"
+else
+    echo -e "[ ${green}INFO${NC} ] nginx belum terinstall, menginstall sekarang..."
+    apt install nginx -y
+fi
+systemctl enable nginx >/dev/null 2>&1
+
+# ✅ FIX: default site nginx listen di 0.0.0.0:80, bentrok sama HAProxy
+# yang harus pegang port publik 80/443. Nonaktifkan default site.
+rm -f /etc/nginx/sites-enabled/default
+
+# ==========================================
+# ✅ CEK & INSTALL HAPROXY (skip jika sudah ada)
+# ==========================================
+echo -e "[ ${green}INFO${NC} ] Checking haproxy installation"
+if command -v haproxy &>/dev/null; then
+    echo -e "[ ${green}OK${NC} ] haproxy sudah terinstall, skip install"
+else
+    echo -e "[ ${green}INFO${NC} ] haproxy belum terinstall, menginstall sekarang..."
+    apt install haproxy -y
+fi
+systemctl enable haproxy >/dev/null 2>&1
+
 # install xray
 sleep 0.1
 echo -e "[ ${green}INFO${NC} ] Downloading & Installing xray core"
@@ -313,6 +341,11 @@ wget -O /etc/nginx/conf.d/xray.conf "${REPO}project/Xray/xray.conf"
 wget -O /etc/haproxy/haproxy.cfg "${REPO}project/Haproxy/haproxy.cfg"
 sed -i "s/xxx/${domain}/" /etc/nginx/conf.d/xray.conf
 sed -i "s/xxx/${domain}/" /etc/haproxy/haproxy.cfg
+
+# ✅ FIX: systemd unit haproxy Ubuntu sudah pass -p /run/haproxy.pid,
+# baris "pidfile" di cfg bikin dobel & muncul ALERT "already specified"
+sed -i '/^\s*pidfile/d' /etc/haproxy/haproxy.cfg
+
 cat /etc/xray/xray.key /etc/xray/xray.crt | tee /etc/haproxy/hap.pem
 
 # ✅ PERBAIKI: Hapus duplikasi daemon-reload
@@ -322,6 +355,7 @@ sleep 0.1
 echo -e "[ ${green}OK${NC} ] Enable & restart xray"
 systemctl enable xray
 systemctl restart xray
+systemctl enable nginx
 systemctl restart nginx
 systemctl enable haproxy
 systemctl restart haproxy
