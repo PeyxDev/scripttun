@@ -196,6 +196,7 @@ fi
 }
 
 # ==================== FUNCTION INSTALLASI ====================
+cd
 function Installasi(){
 res2() {
 wget -q ${REPO}project/openvpn/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
