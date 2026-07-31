@@ -131,11 +131,11 @@ echo "IP=" >> /var/lib/ipvps.conf
 
 clear
 echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
-echo -e "${purple} │                   ${bold_white}PeyxDev${neutral}                     ${purple}│${neutral}"
-echo -e "${purple} │         ${green}┌─┐┬ ┬┌┬┐┌─┐┌─┐┌─┐┬─┐┬┌─┐┌┬┐          ${purple}│${neutral}"
-echo -e "${purple} │         ${green}├─┤│ │ │ │ │└─┐│  ├┬┘│├─┘ │           ${purple}│${neutral}"
-echo -e "${purple} │         ${green}┴ ┴└─┘ ┴ └─┘└─┘└─┘┴└─┴┴   ┴           ${neutral}${purple}│${neutral}"
-echo -e "${purple} │         ${yellow}Copyright${reset} (C)${gray} https://t.me/PeyxDev    ${purple}│${neutral}"
+echo -e "${purple} │                ${bold_white}WELCOME TO SCRIPT${neutral}              ${purple}│${neutral}"
+echo -e "${purple} │            ${Green}┌─┐─┐ ┬  ┌─┐┌┬┐┌─┐┬─┐┌─┐           ${purple}│${neutral}"
+echo -e "${purple} │            ${Green}├─┘┌┴┬┘  └─┐ │ │ │├┬┘├┤            ${purple}│${neutral}"
+echo -e "${purple} │            ${Green}┴  ┴ └─  └─┘ ┴ └─┘┴└─└─┘           ${neutral}${purple}│${neutral}"
+echo -e "${purple} │         ${YELLOW}Copyright${reset} (C)${GRAY} https://t.me/PeyxDev    ${purple}│${neutral}"
 echo -e "${purple} └───────────────────────────────────────────────┘${neutral}"
 echo -e "${purple} ────────────────────────────────────────────────${neutral}"
 echo ""
