@@ -210,7 +210,7 @@ wget -q ${REPO}project/sshws/insshws.sh && chmod +x insshws.sh && ./insshws.sh
 clear
 }
 res5() {
-wget -q ${REPO}project/example/bbr.sh && chmod +x bbr.sh && ./bbr.sh
+wget -q ${REPO}project/examples/bbr.sh && chmod +x bbr.sh && ./bbr.sh
 clear
 }
 res6() {
