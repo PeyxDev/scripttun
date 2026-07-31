@@ -357,7 +357,7 @@ else
     
     # Jika masih kosong, cek dari repo 1 sebagai fallback
     if [[ -z "$IZIN" ]]; then
-        IZIN=$(curl -s https://raw.githubusercontent.com/myridwan/izinvps2/main/ip | grep "$MYIP" | head -1 | awk '{print $3}')
+        IZIN=$(curl -s https://raw.githubusercontent.com/peyxdev/scripttun/main/ip | grep "$MYIP" | head -1 | awk '{print $3}')
     fi
 fi
 
@@ -454,13 +454,11 @@ rm /root/pointing.sh >/dev/null 2>&1
 rm /root/ssh-vpn.sh >/dev/null 2>&1
 rm /root/ins-xray.sh >/dev/null 2>&1
 rm /root/insshws.sh >/dev/null 2>&1
-rm /root/set-br.sh >/dev/null 2>&1
+rm /root/bbr.sh >/dev/null 2>&1
 rm /root/ohp.sh >/dev/null 2>&1
 rm /root/update.sh >/dev/null 2>&1
-rm /root/installsl.sh >/dev/null 2>&1
 rm /root/udp-custom.sh >/dev/null 2>&1
 rm /root/api-px.sh >/dev/null 2>&1
-rm /root/install-ziv.sh >/dev/null 2>&1
 
 # Simpan info
 cd
