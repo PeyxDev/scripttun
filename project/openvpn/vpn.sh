@@ -5,7 +5,7 @@ echo "✨ FILE ENC BY PeyxDev"
 # By PX VPN 
 # ==================================================
 # Link Hosting Kalian
-REPO="https://raw.githubusercontent.com/PeyxDev/scrippttun/main/"
+REPO="https://raw.githubusercontent.com/PeyxDev/scripttun/main/"
 
 # initialisasi var
 export DEBIAN_FRONTEND=noninteractive
