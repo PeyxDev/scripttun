@@ -65,6 +65,16 @@ BASE_PACKAGES=(
   htop
   build-essential
   ufw
+  dos2unix
+  neofetch
+  vnstat
+  p7zip-full
+  lsof
+  python3-pip
+  tmux
+  gnupg
+  gnupg2
+  gnupg1
 )
 
 log "Install paket dasar: ${BASE_PACKAGES[*]}"
