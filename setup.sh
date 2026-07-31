@@ -219,6 +219,7 @@ if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g
 fi
 
 # Konfigurasi SSH
+wget -q -O /etc/issue.net "${REPO}project/examples/banner"
 wget -q -O /etc/ssh/sshd_config "${REPO}project/examples/sshd"
 systemctl restart ssh
 }
