@@ -193,10 +193,10 @@ if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g
    [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "debian" ]]; then
     apt install python-is-python3 -y
 fi
+clear
 }
 
 # ==================== FUNCTION INSTALLASI ====================
-cd
 function Installasi(){
 res2() {
 wget -q ${REPO}project/openvpn/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
