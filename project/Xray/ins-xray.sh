@@ -88,15 +88,36 @@ chmod +x /root/.acme.sh/acme.sh
 /root/.acme.sh/acme.sh --upgrade --auto-upgrade
 /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 /root/.acme.sh/acme.sh --issue -d $domain --standalone -k ec-256
-~/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc
+ACME_ISSUE_STATUS=$?
 
-# nginx renew ssl
-echo -n '#!/bin/bash
+if [ $ACME_ISSUE_STATUS -eq 0 ]; then
+    ~/.acme.sh/acme.sh --installcert -d $domain --fullchainpath /etc/xray/xray.crt --keypath /etc/xray/xray.key --ecc
+else
+    echo -e "[ ${RED}WARN${NC} ] Gagal issue SSL via acme.sh (kemungkinan rate limit). Fallback ke self-signed certificate."
+    openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+        -subj "/C=ID/ST=Jawa Barat/L=Sukabumi/O=PeyxDev/OU=IT Department/CN=${domain}" \
+        -keyout /etc/xray/xray.key -out /etc/xray/xray.crt 2>/dev/null
+fi
+
+# nginx renew ssl (dengan fallback self-signed jika acme kena limit)
+cat > /usr/local/bin/ssl_renew.sh << 'RENEOF'
+#!/bin/bash
+domain=$(cat /etc/xray/domain)
 /etc/init.d/nginx stop
+
 "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" &> /root/renew_ssl.log
+if [ $? -ne 0 ] && ! grep -q "Skip" /root/renew_ssl.log; then
+    echo "[WARN] Renew acme.sh gagal (kemungkinan rate limit), fallback ke self-signed." >> /root/renew_ssl.log
+    openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+        -subj "/C=ID/ST=Jawa Barat/L=Sukabumi/O=PeyxDev/OU=IT Department/CN=${domain}" \
+        -keyout /etc/xray/xray.key -out /etc/xray/xray.crt 2>/dev/null
+fi
+
+cat /etc/xray/xray.key /etc/xray/xray.crt | tee /etc/haproxy/hap.pem > /dev/null
 /etc/init.d/nginx start
 /etc/init.d/nginx status
-' > /usr/local/bin/ssl_renew.sh
+systemctl restart haproxy
+RENEOF
 chmod +x /usr/local/bin/ssl_renew.sh
 if ! grep -q 'ssl_renew.sh' /var/spool/cron/crontabs/root;then (crontab -l;echo "15 03 */3 * * /usr/local/bin/ssl_renew.sh") | crontab;fi
 
