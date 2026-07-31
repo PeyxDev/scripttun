@@ -146,24 +146,16 @@ install_ssl(){
 apt -y install nginx php php-fpm php-cli php-mysql libxml-parser-perl
 rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/sites-available/default
-curl ${REPO}project/nginx/nginx.conf > /etc/nginx/nginx.conf
-curl ${REPO}project/nginx/vps.conf > /etc/nginx/conf.d/vps.conf
-
-# Fix PHP-FPM
-PHP_VER=$(php -v | head -1 | cut -d' ' -f2 | cut -d'.' -f1,2)
-sed -i 's/listen = \/var\/run\/php-fpm.sock/listen = 127.0.0.1:9000/g' /etc/php/$PHP_VER/fpm/pool.d/www.conf 2>/dev/null || true
-
-# Buat file (tanpa download)
+curl ${REPO}project/examples/nginx.conf > /etc/nginx/nginx.conf
+curl ${REPO}project/examples/vps.conf > /etc/nginx/conf.d/vps.conf
+sed -i 's/listen = \/var\/run\/php-fpm.sock/listen = 127.0.0.1:9000/g' /etc/php/fpm/pool.d/www.conf
 mkdir -p /home/vps/public_html
-echo "<?php phpinfo(); ?>" > /home/vps/public_html/info.php
-echo "<h1>Welcome to VPS</h1><p>Server is running</p><a href='info.php'>PHP Info</a>" > /home/vps/public_html/index.html
-
-# Set permission
+echo "<?php phpinfo() ?>" > /home/vps/public_html/info.php
 chown -R www-data:www-data /home/vps/public_html
-chmod -R 755 /home/vps/public_html
-
-# Restart
-systemctl restart php${PHP_VER}-fpm nginx
+chmod -R g+rw /home/vps/public_html
+cd /home/vps/public_html
+wget -O /home/vps/public_html/index.html "${REPO}project/examples/index.html1"
+/etc/init.d/nginx restart
 
 # install badvpn
 cd
