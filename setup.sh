@@ -198,7 +198,7 @@ fi
 # ==================== FUNCTION INSTALLASI ====================
 function Installasi(){
 res2() {
-wget -q ${REPO}project/openvpn/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
+wget -q ${REPO}project/openvpn/ins-openvpn.sh && chmod +x ins-openvpn.sh && ./ins-openvpn.sh
 clear
 }
 res3() {
