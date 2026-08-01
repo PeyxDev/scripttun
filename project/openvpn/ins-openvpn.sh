@@ -158,3 +158,67 @@ print_info "OpenVPN TCP : port 1194"
 print_info "OpenVPN UDP : port 2200"
 print_info "Auth        : Username/Password sistem (PAM login), tanpa client cert"
 echo ""
+
+# ==================== INSTALL SQUID PROXY ====================
+print_section_header "INSTALL SQUID PROXY"
+print_info "Menginstall paket squid..."
+
+apt install -y squid >/dev/null 2>&1
+
+if ! command -v squid &>/dev/null; then
+    print_error "Gagal install paket squid. Cek koneksi/repo APT."
+else
+    print_success "Paket squid terinstall"
+
+    # Backup config asli (sekali saja)
+    if [[ ! -f /etc/squid/squid.conf.bak ]]; then
+        cp /etc/squid/squid.conf /etc/squid/squid.conf.bak
+    fi
+
+    # Tulis ulang squid.conf dengan port custom
+    cat > /etc/squid/squid.conf << EOF
+acl SSH_ports port 22
+acl CONNECT method CONNECT
+
+http_access allow all
+http_port 3128
+http_port 8080
+http_port 8888
+
+visible_hostname squid-proxy
+dns_nameservers 8.8.8.8 8.8.4.4
+forwarded_for off
+via off
+request_header_access X-Forwarded-For deny all
+request_header_access Via deny all
+request_header_access Cache-Control deny all
+
+cache deny all
+access_log none
+cache_store_log none
+EOF
+
+    # Buka port squid di iptables & tambahkan ke script persist
+    cat >> /etc/openvpn/server/openvpn-iptables.sh << EOF
+iptables -I INPUT -p tcp --dport 3128 -j ACCEPT
+iptables -I INPUT -p tcp --dport 8080 -j ACCEPT
+iptables -I INPUT -p tcp --dport 8888 -j ACCEPT
+EOF
+    bash /etc/openvpn/server/openvpn-iptables.sh >/dev/null 2>&1
+
+    systemctl daemon-reload >/dev/null 2>&1
+    systemctl enable squid >/dev/null 2>&1
+    systemctl restart squid >/dev/null 2>&1
+
+    sleep 2
+
+    if systemctl is-active --quiet squid; then
+        print_success "Squid proxy berjalan"
+    else
+        print_error "Squid gagal start, cek: journalctl -u squid -e"
+    fi
+
+    print_section_header "✅ SQUID PROXY INSTALLED"
+    print_info "Squid Proxy : port 3128, 8080, 8888"
+fi
+echo ""
