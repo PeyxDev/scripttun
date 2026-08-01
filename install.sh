@@ -204,7 +204,7 @@ init_dirs() {
 install_tools() {
     print_section_header "🛠️  Installing Package"
 
-    if ! run_task "Mengunduh package.sh" "curl -fsSL -o '${TOOLS_SCRIPT}' '${RAW_BASE}/tools.sh'"; then
+    if ! run_task "Mengunduh package.sh" "curl -fsSL -o '${TOOLS_SCRIPT}' '${RAW_BASE}/package.sh'"; then
         print_error "Gagal mengunduh package.sh, instalasi package dilewati"
         return 1
     fi
