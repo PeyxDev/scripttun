@@ -72,6 +72,7 @@ REPO_OWNER="PeyxDev"
 REPO_NAME="scripttun"
 REPO_BRANCH="main"
 RAW_BASE="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${REPO_BRANCH}"
+TOOLS_SCRIPT="${RAW_BASE}/package.sh"
 
 # File tambahan di project/ (di luar MODULES) yang dipakai langsung oleh
 # installer ini (lihat setup_ssh_access()).
@@ -81,8 +82,6 @@ EXTRA_PROJECT_FILES=(
     "examples/banner"
 )
 
-# Cukup ubah satu variabel ini untuk ganti password ZIP menu
-ZIP_PASSWORD="PeyxDev@23"
 LOG_FILE="/tmp/px_install.log"
 
 MODULES=(
@@ -142,7 +141,7 @@ print_fail()    { echo -e "\r${RED}✗${NC} $1"; exit 1; }
 PX_Banner() {
 clear
 echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
-echo -e "${purple} │                    ${bold_white}WELCOME TO${neutral}                    ${purple}│${neutral}"
+echo -e "${purple} │                    ${bold_white}WELCOME TO SCRIPT${neutral}                    ${purple}│${neutral}"
 echo -e "${purple} │         ${Green}┌─┐─┐ ┬  ┌─┐┌┬┐┌─┐┬─┐┌─┐          ${purple}│${neutral}"
 echo -e "${purple} │         ${Green}├─┘┌┴┬┘  └─┐ │ │ │├┬┘├┤           ${purple}│${neutral}"
 echo -e "${purple} │         ${Green}┴  ┴ └─  └─┘ ┴ └─┘┴└─└─┘          ${neutral}${purple}│${neutral}"
@@ -213,8 +212,12 @@ download_project() {
         fi
     done
 
-    if ! run_task "Mengunduh menu/menu.zip" "curl -fsSL -o '${MENU_DIR}/menu.zip' '${RAW_BASE}/menu/menu.zip'"; then
-        print_warning "Gagal mengunduh menu.zip, instalasi menu manager mungkin dilewati"
+    if ! run_task "Mengunduh menu/update.sh" "curl -fsSL -o '${MENU_DIR}/update.sh' '${RAW_BASE}/menu/update.sh'"; then
+        print_warning "Gagal mengunduh update.sh, instalasi menu manager mungkin dilewati"
+    fi
+
+    if ! run_task "Mengunduh tools.sh" "curl -fsSL -o '${TOOLS_SCRIPT}' '${RAW_BASE}/tools.sh'"; then
+        print_warning "Gagal mengunduh tools.sh, instalasi tools mungkin dilewati"
     fi
 
     if [ $failed -eq 1 ]; then
@@ -222,6 +225,28 @@ download_project() {
     else
         print_success "Semua file project berhasil diunduh ke ${PROJECT_DIR}"
     fi
+}
+
+install_tools() {
+    print_section_header "🛠️  Installing Tools"
+
+    if [ ! -f "$TOOLS_SCRIPT" ]; then
+        print_error "tools.sh tidak ditemukan, instalasi tools dilewati"
+        return 1
+    fi
+
+    chmod +x "$TOOLS_SCRIPT"
+
+    print_info "Menjalankan tools.sh"
+    bash "$TOOLS_SCRIPT"
+    local status=$?
+
+    if [ $status -eq 0 ]; then
+        print_success "tools.sh selesai dijalankan"
+    else
+        print_warning "tools.sh selesai dengan kode keluar ${status}"
+    fi
+    return $status
 }
 
 install_module() {
@@ -335,17 +360,23 @@ setup_ssh_access() {
 install_menu() {
     print_section_header "📦 Installing Menu Manager"
 
-    local zip_path="${MENU_DIR}/menu.zip"
-    if [ ! -f "$zip_path" ]; then
-        print_error "menu.zip tidak ditemukan di ${MENU_DIR}, instalasi menu dilewati"
+    local update_script="${MENU_DIR}/update.sh"
+    if [ ! -f "$update_script" ]; then
+        print_error "update.sh tidak ditemukan di ${MENU_DIR}, instalasi menu dilewati"
         return 1
     fi
 
-    run_task "Extracting Menu Package" "rm -rf /tmp/menu && 7z x -p'${ZIP_PASSWORD}' '${zip_path}' -o/tmp/menu/ -y"
-    run_task "Installing Menu Files" "find /tmp/menu -type f -exec cp -f {} /usr/local/bin/ \;"
-    run_task "Converting to Unix format" "find /usr/local/bin -maxdepth 1 -type f -exec dos2unix {} + 2>/dev/null"
-    run_task "Setting execute permissions" "find /usr/local/bin -maxdepth 1 -type f -exec chmod +x {} \; 2>/dev/null"
-    run_task "Cleaning up" "rm -rf /tmp/menu"
+    chmod +x "$update_script"
+
+    print_info "Menjalankan update.sh (download & install menu manager)"
+    bash "$update_script"
+    local status=$?
+
+    if [ $status -eq 0 ]; then
+        print_success "update.sh selesai dijalankan"
+    else
+        print_warning "update.sh selesai dengan kode keluar ${status}"
+    fi
 
     sed -i '/# ========== AUTO MENU ==========/,/# ================================/d' /root/.bashrc 2>/dev/null
     sed -i '/# ========== AUTO MENU ==========/,/# ================================/d' /root/.profile 2>/dev/null
@@ -365,6 +396,11 @@ EOF
     echo "alias menu='bash /usr/local/bin/menu'" >> /root/.bashrc
 
     print_success "Menu Manager terpasang & auto-start saat login dikonfigurasi"
+}
+
+cleanup_downloads() {
+    print_section_header "🧹 Membersihkan File Unduhan"
+    run_task "Menghapus file project/menu/tools hasil unduhan" "rm -rf '${PROJECT_DIR}' '${MENU_DIR}' '${TOOLS_SCRIPT}'"
 }
 
 # ==================== MAIN ====================
@@ -403,17 +439,23 @@ print_success "Domain diset & disimpan ke /etc/xray/domain: $domain"
 print_section_header "🚀 Menjalankan Semua Modul Instalasi (lokal)"
 print_info "Modul yang akan dijalankan: ${MODULES[*]}"
 
+install_tools
+
 FAILED_MODULES=()
 for module in "${MODULES[@]}"; do
     print_section_header "📦 Modul: ${module}"
     if ! install_module "$module"; then
         FAILED_MODULES+=("$module")
     fi
+    clear
+    PX_Banner
 done
 
 setup_ssh_access
 
 install_menu
+
+cleanup_downloads
 
 print_section_header "🌐 Konfigurasi DNS"
 set_dns
