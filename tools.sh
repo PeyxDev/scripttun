@@ -65,6 +65,7 @@ BASE_PACKAGES=(
   htop
   build-essential
   ufw
+  dos2unix
 )
 
 log "Install paket dasar: ${BASE_PACKAGES[*]}"

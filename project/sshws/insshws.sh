@@ -21,7 +21,12 @@ fi
 # Link Hosting Kalian
 sudo apt install python3
 
-wget -O /usr/local/bin/ws "https://raw.githubusercontent.com/PeyxDev/scripttun/main/project/sshws/ws"
+LOCAL_WS="${PX_PROJECT_DIR:-}/sshws/ws"
+if [[ -n "$PX_PROJECT_DIR" && -f "$LOCAL_WS" ]]; then
+    cp -f "$LOCAL_WS" /usr/local/bin/ws
+else
+    wget -O /usr/local/bin/ws "https://raw.githubusercontent.com/PeyxDev/scripttun/main/project/sshws/ws"
+fi
 chmod +x /usr/local/bin/ws
 
 # Installing Service
@@ -49,7 +54,11 @@ systemctl enable ws.service
 systemctl start ws.service
 systemctl restart ws.service
 
-wget -O /usr/local/bin/ws-ovpn "https://raw.githubusercontent.com/PeyxDev/scripttun/main/project/sshws/ws"
+if [[ -n "$PX_PROJECT_DIR" && -f "$LOCAL_WS" ]]; then
+    cp -f "$LOCAL_WS" /usr/local/bin/ws-ovpn
+else
+    wget -O /usr/local/bin/ws-ovpn "https://raw.githubusercontent.com/PeyxDev/scripttun/main/project/sshws/ws"
+fi
 chmod +x /usr/local/bin/ws-ovpn
 
 # Installing Service

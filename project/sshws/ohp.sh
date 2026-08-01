@@ -16,7 +16,12 @@ LIGHT='\033[0;37m'
 # Getting
 
 # Download File Ohp
- wget -O /usr/local/bin/ohpserver "${REPO}/project/sshws/ohpserver"
+LOCAL_OHP="${PX_PROJECT_DIR:-}/sshws/ohpserver"
+if [[ -n "$PX_PROJECT_DIR" && -f "$LOCAL_OHP" ]]; then
+    cp -f "$LOCAL_OHP" /usr/local/bin/ohpserver
+else
+    wget -O /usr/local/bin/ohpserver "${REPO}/project/sshws/ohpserver"
+fi
  chmod +x /usr/local/bin/ohpserver
 # Installing Service
 # SSH OHP Port 8181

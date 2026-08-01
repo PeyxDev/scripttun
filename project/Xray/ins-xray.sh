@@ -337,8 +337,16 @@ WantedBy=multi-user.target
 EOF
 
 #nginx config
-wget -O /etc/nginx/conf.d/xray.conf "${REPO}project/Xray/xray.conf"
-wget -O /etc/haproxy/haproxy.cfg "${REPO}project/Haproxy/haproxy.cfg"
+if [[ -n "$PX_PROJECT_DIR" && -f "${PX_PROJECT_DIR}/Xray/xray.conf" ]]; then
+    cp -f "${PX_PROJECT_DIR}/Xray/xray.conf" /etc/nginx/conf.d/xray.conf
+else
+    wget -O /etc/nginx/conf.d/xray.conf "${REPO}project/Xray/xray.conf"
+fi
+if [[ -n "$PX_PROJECT_DIR" && -f "${PX_PROJECT_DIR}/Haproxy/haproxy.cfg" ]]; then
+    cp -f "${PX_PROJECT_DIR}/Haproxy/haproxy.cfg" /etc/haproxy/haproxy.cfg
+else
+    wget -O /etc/haproxy/haproxy.cfg "${REPO}project/Haproxy/haproxy.cfg"
+fi
 sed -i "s/xxx/${domain}/" /etc/nginx/conf.d/xray.conf
 sed -i "s/xxx/${domain}/" /etc/haproxy/haproxy.cfg
 
