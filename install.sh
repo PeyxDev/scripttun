@@ -1,9 +1,10 @@
 #!/bin/bash
 # ==========================================================================
 #  PX STORE - INSTALLER (REMOTE / GITHUB)
-#  Script ini mengunduh folder project/ dan menu/ langsung dari repository
-#  GitHub (lihat REPO_OWNER/REPO_NAME/REPO_BRANCH di bawah), lalu
-#  menjalankan semua modul instalasi dari hasil unduhan tersebut.
+#  Script ini mengunduh & menjalankan tiap modul instalasi SATU PER SATU
+#  langsung dari repository GitHub (lihat REPO_OWNER/REPO_NAME/REPO_BRANCH
+#  di bawah) — download modul, langsung dijalankan, baru lanjut ke modul
+#  berikutnya (tidak mengunduh semua file dulu baru diinstall belakangan).
 #  Modul-modul individual (ins-xray.sh, insshws.sh, ohp.sh, ins-badvpn.sh)
 #  juga sudah dipatch supaya pakai file/binary hasil unduhan lebih dulu
 #  (lewat env PX_PROJECT_DIR), baru fallback download remote kalau
@@ -61,9 +62,9 @@ CROSS_ICON="✗"
 # ==================== PATH DASAR ====================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# PROJECT_DIR & MENU_DIR diisi otomatis oleh download_project() setelah
-# file-file diunduh satu per satu dari GitHub raw (lihat konfigurasi
-# REPO_* di bawah).
+# PROJECT_DIR & MENU_DIR diisi oleh init_dirs(). File modul diunduh satu
+# per satu (per modul, langsung dijalankan) dari GitHub raw (lihat
+# konfigurasi REPO_* di bawah), bukan diunduh semua sekaligus di awal.
 PROJECT_DIR=""
 MENU_DIR=""
 
@@ -141,10 +142,10 @@ print_fail()    { echo -e "\r${RED}✗${NC} $1"; exit 1; }
 PX_Banner() {
 clear
 echo -e "${purple} ┌───────────────────────────────────────────────┐${neutral}"
-echo -e "${purple} │                    ${bold_white}WELCOME TO SCRIPT${neutral}                    ${purple}│${neutral}"
-echo -e "${purple} │         ${Green}┌─┐─┐ ┬  ┌─┐┌┬┐┌─┐┬─┐┌─┐          ${purple}│${neutral}"
-echo -e "${purple} │         ${Green}├─┘┌┴┬┘  └─┐ │ │ │├┬┘├┤           ${purple}│${neutral}"
-echo -e "${purple} │         ${Green}┴  ┴ └─  └─┘ ┴ └─┘┴└─└─┘          ${neutral}${purple}│${neutral}"
+echo -e "${purple} │                ${bold_white}WELCOME TO SCRIPT${neutral}              ${purple}│${neutral}"
+echo -e "${purple} │           ${Green}┌─┐─┐ ┬  ┌─┐┌┬┐┌─┐┬─┐┌─┐            ${purple}│${neutral}"
+echo -e "${purple} │           ${Green}├─┘┌┴┬┘  └─┐ │ │ │├┬┘├┤             ${purple}│${neutral}"
+echo -e "${purple} │           ${Green}┴  ┴ └─  └─┘ ┴ └─┘┴└─└─┘            ${neutral}${purple}│${neutral}"
 echo -e "${purple} │        ${YELLOW}Copyright${reset} (C)${GRAY} https://t.me/PeyxDev     ${purple}│${neutral}"
 echo -e "${purple} └───────────────────────────────────────────────┘${neutral}"
 }
@@ -193,58 +194,31 @@ else
 fi
 }
 
-download_project() {
-    print_section_header "⬇️  Mengunduh Project dari Repository"
-
+init_dirs() {
     PROJECT_DIR="/tmp/px_project"
     MENU_DIR="/tmp/px_menu"
     rm -rf "$PROJECT_DIR" "$MENU_DIR"
     mkdir -p "$PROJECT_DIR" "$MENU_DIR"
-
-    local all_files=("${MODULES[@]}" "${EXTRA_PROJECT_FILES[@]}")
-    local f dest_dir failed=0
-    for f in "${all_files[@]}"; do
-        dest_dir="$(dirname "${PROJECT_DIR}/${f}")"
-        mkdir -p "$dest_dir"
-        if ! run_task "Mengunduh project/${f}" "curl -fsSL -o '${PROJECT_DIR}/${f}' '${RAW_BASE}/project/${f}'"; then
-            print_warning "Gagal mengunduh project/${f}"
-            failed=1
-        fi
-    done
-
-    if ! run_task "Mengunduh menu/update.sh" "curl -fsSL -o '${MENU_DIR}/update.sh' '${RAW_BASE}/menu/update.sh'"; then
-        print_warning "Gagal mengunduh update.sh, instalasi menu manager mungkin dilewati"
-    fi
-
-    if ! run_task "Mengunduh tools.sh" "curl -fsSL -o '${TOOLS_SCRIPT}' '${RAW_BASE}/tools.sh'"; then
-        print_warning "Gagal mengunduh tools.sh, instalasi tools mungkin dilewati"
-    fi
-
-    if [ $failed -eq 1 ]; then
-        print_warning "Sebagian file project gagal diunduh, modul terkait mungkin gagal berjalan"
-    else
-        print_success "Semua file project berhasil diunduh ke ${PROJECT_DIR}"
-    fi
 }
 
 install_tools() {
-    print_section_header "🛠️  Installing Tools"
+    print_section_header "🛠️  Installing Package"
 
-    if [ ! -f "$TOOLS_SCRIPT" ]; then
-        print_error "tools.sh tidak ditemukan, instalasi tools dilewati"
+    if ! run_task "Mengunduh package.sh" "curl -fsSL -o '${TOOLS_SCRIPT}' '${RAW_BASE}/tools.sh'"; then
+        print_error "Gagal mengunduh package.sh, instalasi package dilewati"
         return 1
     fi
 
     chmod +x "$TOOLS_SCRIPT"
 
-    print_info "Menjalankan tools.sh"
+    print_info "Menjalankan package.sh"
     bash "$TOOLS_SCRIPT"
     local status=$?
 
     if [ $status -eq 0 ]; then
-        print_success "tools.sh selesai dijalankan"
+        print_success "package.sh selesai dijalankan"
     else
-        print_warning "tools.sh selesai dengan kode keluar ${status}"
+        print_warning "package.sh selesai dengan kode keluar ${status}"
     fi
     return $status
 }
@@ -252,11 +226,13 @@ install_tools() {
 install_module() {
     local rel="$1"
     local path="${PROJECT_DIR}/${rel}"
-    local name
+    local dest_dir name
     name="$(basename "$rel")"
+    dest_dir="$(dirname "$path")"
+    mkdir -p "$dest_dir"
 
-    if [[ ! -f "$path" ]]; then
-        print_error "Modul tidak ditemukan: ${rel}"
+    if ! run_task "Mengunduh project/${rel}" "curl -fsSL -o '${path}' '${RAW_BASE}/project/${rel}'"; then
+        print_error "Gagal mengunduh modul: ${rel}"
         return 1
     fi
 
@@ -294,6 +270,13 @@ setup_ssh_access() {
     local sshd_src="${PROJECT_DIR}/examples/sshd"
     local pam_src="${PROJECT_DIR}/examples/common-password"
     local banner_src="${PROJECT_DIR}/examples/banner"
+
+    mkdir -p "$(dirname "$sshd_src")"
+    local f
+    for f in "${EXTRA_PROJECT_FILES[@]}"; do
+        run_task "Mengunduh project/${f}" "curl -fsSL -o '${PROJECT_DIR}/${f}' '${RAW_BASE}/project/${f}'" \
+            || print_warning "Gagal mengunduh project/${f}"
+    done
 
     if [[ -f "$banner_src" ]]; then
         cp -f "$banner_src" /etc/issue.net
@@ -361,8 +344,10 @@ install_menu() {
     print_section_header "📦 Installing Menu Manager"
 
     local update_script="${MENU_DIR}/update.sh"
-    if [ ! -f "$update_script" ]; then
-        print_error "update.sh tidak ditemukan di ${MENU_DIR}, instalasi menu dilewati"
+    mkdir -p "$MENU_DIR"
+
+    if ! run_task "Mengunduh menu/update.sh" "curl -fsSL -o '${update_script}' '${RAW_BASE}/menu/update.sh'"; then
+        print_error "Gagal mengunduh update.sh, instalasi menu dilewati"
         return 1
     fi
 
@@ -417,7 +402,7 @@ print_section_header "📦 Persiapan Sistem"
 run_task "Memperbarui daftar paket" "apt-get update -y"
 run_task "Memasang paket dasar" "apt-get install -y wget curl ca-certificates p7zip-full dos2unix"
 
-download_project
+init_dirs
 
 print_section_header "🌐 Konfigurasi Domain"
 echo ""
@@ -436,20 +421,62 @@ mkdir -p /etc/xray
 echo "$domain" > /etc/xray/domain
 print_success "Domain diset & disimpan ke /etc/xray/domain: $domain"
 
-print_section_header "🚀 Menjalankan Semua Modul Instalasi (lokal)"
-print_info "Modul yang akan dijalankan: ${MODULES[*]}"
+print_section_header "🚀 Download & Menjalankan Modul Instalasi (satu per satu)"
+print_info "Modul yang akan diproses: ${MODULES[*]}"
 
 install_tools
 
 FAILED_MODULES=()
-for module in "${MODULES[@]}"; do
-    print_section_header "📦 Modul: ${module}"
-    if ! install_module "$module"; then
-        FAILED_MODULES+=("$module")
-    fi
-    clear
-    PX_Banner
-done
+
+print_section_header "📦 Modul: ins-dropbear.sh"
+install_module "dropbear/ins-dropbear.sh" || FAILED_MODULES+=("dropbear/ins-dropbear.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: ins-badvpn.sh"
+install_module "BadVPN-UDPGW/ins-badvpn.sh" || FAILED_MODULES+=("BadVPN-UDPGW/ins-badvpn.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: ins-openvpn.sh"
+install_module "openvpn/ins-openvpn.sh" || FAILED_MODULES+=("openvpn/ins-openvpn.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: bbr.sh"
+install_module "examples/bbr.sh" || FAILED_MODULES+=("examples/bbr.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: ins-xray.sh"
+install_module "Xray/ins-xray.sh" || FAILED_MODULES+=("Xray/ins-xray.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: ins-nginx-redirect.sh"
+install_module "nginx/ins-nginx-redirect.sh" || FAILED_MODULES+=("nginx/ins-nginx-redirect.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: api-px.sh"
+install_module "api/api-px.sh" || FAILED_MODULES+=("api/api-px.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: insshws.sh"
+install_module "sshws/insshws.sh" || FAILED_MODULES+=("sshws/insshws.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: ohp.sh"
+install_module "sshws/ohp.sh" || FAILED_MODULES+=("sshws/ohp.sh")
+clear
+PX_Banner
+
+print_section_header "📦 Modul: udp-custom.sh"
+install_module "udp/udp-custom.sh" || FAILED_MODULES+=("udp/udp-custom.sh")
+clear
+PX_Banner
 
 setup_ssh_access
 
